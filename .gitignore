@@ -1,0 +1,30 @@
+# Java / Maven
+target/
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+*.class
+*.log
+
+# Node / 前端
+frontend/node_modules/
+frontend/dist/
+npm-debug.log*
+.npm/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 本地环境
+logs/
+*.local.yml
+application-local.yml
+.env
