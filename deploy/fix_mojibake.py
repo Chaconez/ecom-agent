@@ -6,11 +6,14 @@ CP1252 解读后以 utf8mb4 存储，形成 "ä¸Šæµ·" 类乱码。
 本脚本通过 HEX() 读取（纯 ASCII 传输，避免二次损坏），在本地还原后
 以 UNHEX() 写回。
 """
+import os
 import shlex
 import subprocess
 import sys
 
-NAS = "chacone@192.168.3.3"
+# 通过环境变量注入，避免把凭据写进仓库：
+#   NAS_SSH=user@your-nas-ip MYSQL_ROOT_PASSWORD=xxx python3 fix_mojibake.py
+NAS = os.environ.get("NAS_SSH", "user@your-nas-ip")
 DB = "ecom_cs"
 
 # CP1252 中 0x80-0x9F 特殊字符 → 字节值 的逆映射
@@ -57,10 +60,13 @@ def is_double_encoded(s: str):
 
 
 def mysql(query: str) -> str:
+    root_pwd = os.environ.get("MYSQL_ROOT_PASSWORD", "")
+    if not root_pwd:
+        raise RuntimeError("请先设置环境变量 MYSQL_ROOT_PASSWORD")
     cmd = [
         "ssh", NAS,
-        "docker run --rm --network host mysql:8 mysql -h 127.0.0.1 -uroot -pqwasqw12 "
-        f"{DB} -e {shlex.quote(query)}",
+        "docker run --rm --network host mysql:8 mysql -h 127.0.0.1 "
+        f"-uroot -p{shlex.quote(root_pwd)} {DB} -e {shlex.quote(query)}",
     ]
     r = subprocess.run(cmd, capture_output=True, text=True)
     if r.returncode != 0:

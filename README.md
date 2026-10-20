@@ -141,9 +141,9 @@ mvn package -DskipTests && java -jar target/ecom-agent-1.0.0-SNAPSHOT.jar
 | 配置 | 默认值 | 环境变量 |
 |---|---|---|
 | 服务端口 | 8094 | `SERVER_PORT` |
-| MySQL | `127.0.0.1:3306/ecom_cs`（chacone/qwasqw12） | `SPRING_DATASOURCE_URL` 等 |
+| MySQL | `127.0.0.1:3306/ecom_cs`（root，密码经 `MYSQL_PASSWORD` 注入） | `SPRING_DATASOURCE_URL` / `MYSQL_USER` / `MYSQL_PASSWORD` |
 | Redis | `127.0.0.1:6379` | `REDIS_HOST` / `REDIS_PORT` |
-| Ollama | `http://192.168.3.15:11434` | `OLLAMA_BASE_URL` |
+| Ollama | `http://127.0.0.1:11434` | `OLLAMA_BASE_URL` |
 | 轻任务模型 | qwen2.5:7b | `OLLAMA_FAST_MODEL` |
 | 主链路模型 | qwen3.8:27b-mlx | `OLLAMA_STRONG_MODEL` |
 

@@ -26,6 +26,12 @@
         <mybatis-plus.version>3.5.9</mybatis-plus.version>
         <druid.version>1.2.23</druid.version>
         <sa-token.version>1.39.0</sa-token.version>
+        <!--
+          资源过滤占位符默认值（application.yml 中的 @dashscope.api.key@）。
+          模型已全量走本地 Ollama，此处仅占位；如需云端 DashScope，
+          用命令行覆盖：mvn package -Ddashscope.api.key=sk-xxx
+        -->
+        <dashscope.api.key>your-dashscope-api-key</dashscope.api.key>
     </properties>
 
     <dependencies>
@@ -171,7 +177,38 @@
     </dependencies>
 
     <build>
+        <resources>
+            <!-- 资源过滤：替换 application.yml 中的 @xxx@ 占位符（如 @dashscope.api.key@） -->
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
         <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <configuration>
+                    <!-- 二进制文件不参与过滤，避免被当成 UTF-8 文本读取导致 MalformedInputException 或文件损坏 -->
+                    <nonFilteredFileExtensions>
+                        <nonFilteredFileExtension>xlsx</nonFilteredFileExtension>
+                        <nonFilteredFileExtension>xls</nonFilteredFileExtension>
+                        <nonFilteredFileExtension>docx</nonFilteredFileExtension>
+                        <nonFilteredFileExtension>doc</nonFilteredFileExtension>
+                        <nonFilteredFileExtension>pptx</nonFilteredFileExtension>
+                        <nonFilteredFileExtension>pdf</nonFilteredFileExtension>
+                        <nonFilteredFileExtension>zip</nonFilteredFileExtension>
+                        <nonFilteredFileExtension>ico</nonFilteredFileExtension>
+                        <nonFilteredFileExtension>p12</nonFilteredFileExtension>
+                        <nonFilteredFileExtension>jks</nonFilteredFileExtension>
+                        <nonFilteredFileExtension>crt</nonFilteredFileExtension>
+                        <nonFilteredFileExtension>key</nonFilteredFileExtension>
+                        <nonFilteredFileExtension>ttf</nonFilteredFileExtension>
+                        <nonFilteredFileExtension>woff</nonFilteredFileExtension>
+                        <nonFilteredFileExtension>woff2</nonFilteredFileExtension>
+                    </nonFilteredFileExtensions>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>

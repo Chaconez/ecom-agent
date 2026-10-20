@@ -23,7 +23,7 @@
 
 ## 数据库
 
-- 库名 `ecom_cs`（MySQL，应用账号 chacone/qwasqw12）
+- 库名 `ecom_cs`（MySQL，应用账号/密码通过环境变量注入，勿写死）
 - 表结构：`src/main/resources/db/schema.sql`（11 张表：user_account / user_profile /
   travel_order / approval_record / booking_record / ecom_product / user_preference /
   chat_conversation / chat_message / user_api_key / travel_policy_rule）
@@ -36,8 +36,12 @@
 SERVER_PORT=8094
 OLLAMA_BASE_URL=http://192.168.3.15:11434
 SPRING_DATASOURCE_URL=jdbc:mysql://127.0.0.1:3306/ecom_cs?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false
+MYSQL_USER=your_db_user
+MYSQL_PASSWORD=your_db_password
 SPRING_DATA_REDIS_HOST=127.0.0.1
 MINIO_ENDPOINT=http://127.0.0.1:9000
+MINIO_ACCESS_KEY=your_minio_access_key
+MINIO_SECRET_KEY=your_minio_secret_key
 MINIO_BUCKET=ecom-cs
 LOGGING_FILE_NAME=/app/logs/ecom.log
 TZ=Asia/Shanghai
@@ -57,6 +61,8 @@ docker run -d --name llmentor-ecom-backend --restart always --network host \
   -e SERVER_PORT=8094 \
   -e OLLAMA_BASE_URL=http://192.168.3.15:11434 \
   -e SPRING_DATASOURCE_URL='jdbc:mysql://127.0.0.1:3306/ecom_cs?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false' \
+  -e MYSQL_USER=your_db_user \
+  -e MYSQL_PASSWORD=your_db_password \
   -e SPRING_DATA_REDIS_HOST=127.0.0.1 \
   -e MINIO_ENDPOINT=http://127.0.0.1:9000 \
   -e MINIO_BUCKET=ecom-cs \
@@ -104,7 +110,7 @@ ssh chacone@192.168.3.3 "docker run --rm -v /vol1/llmmentor/ecom/frontend:/mnt e
 
 ```bash
 scp demo_data_test_account.sql chacone@192.168.3.3:/vol1/llmmentor/ecom/
-ssh chacone@192.168.3.3 "docker exec -i \$(docker ps -q -f name=mysql) mysql -uroot -pqwasqw12 \
+ssh chacone@192.168.3.3 "docker exec -i \$(docker ps -q -f name=mysql) mysql -uroot -p\"\$MYSQL_ROOT_PASSWORD\" \
   ecom_cs --default-character-set=utf8mb4 < /vol1/llmmentor/ecom/demo_data_test_account.sql"
 ```
 
