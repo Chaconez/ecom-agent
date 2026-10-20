@@ -190,8 +190,8 @@ class SensitiveMaskerTest {
         @Test
         @DisplayName("sk- 前缀的 API Key 被全量脱敏")
         void shouldMaskSkKey() {
-            String result = SensitiveMasker.mask("key=sk-fa5d4336bd26444cad9982ab43543bf3");
-            assertFalse(result.contains("fa5d4336bd26444cad9982ab43543bf3"));
+            String result = SensitiveMasker.mask("key=sk-00001111222233334444555566667777");
+            assertFalse(result.contains("00001111222233334444555566667777"));
         }
 
         @Test
