@@ -150,7 +150,7 @@ mvn package -DskipTests && java -jar target/ecom-agent-1.0.0-SNAPSHOT.jar
 显存紧张时把主链路模型换成小模型（如 `qwen2.5:7b`）：`OLLAMA_STRONG_MODEL=qwen2.5:7b`。
 上下文窗口用 `OLLAMA_STRONG_NUM_CTX` 调整（默认 16K）。
 
-### 5.4 启动前端
+### 5.4 启动前端（C 端用户端）
 
 ```bash
 cd frontend
@@ -162,15 +162,30 @@ VITE_API_BASE=http://127.0.0.1:8094 npm run build
 
 访问 http://127.0.0.1:5173（dev）/ 静态 dist（build）。
 
-### 5.5 演示账号
+### 5.5 启动管理端（B 端客服工作台）
 
-| 账号 | 密码 | 说明 |
-|---|---|---|
-| `test` | `123456` | 演示账号（预置 3 条工单 + 4 条订单，含在途物流） |
-| `admin` | `123456` | 管理员（客服工作台） |
+```bash
+cd admin
+npm ci
+npm run dev      # 开发，Vite 代理 /api → 127.0.0.1:8094
+# 或构建
+npm run build
+```
+
+管理端为独立 SPA（默认 8097，可用 `-p` 改端口），登录页仅放行 ADMIN 角色账号。
+
+### 5.6 演示账号与分端约定
+
+| 账号 | 密码 | 端 | 说明 |
+|---|---|---|---|
+| `test` | `123456` | 用户端（frontend） | 演示账号（预置 3 条工单 + 4 条订单，含在途物流） |
+| `admin` | `123456` | 管理端（admin） | 客服工作台：会话接管、人工对话、工单审批 |
+
+**admin 登录用户端也能用**（方便演示者预览 C 端体验，登录后有管理端入口横幅），
+但管理端接口（`/api/admin/**`）严格校验 `@SaCheckRole("ADMIN")`，非管理员访问返回 403。
 
 登录后依次尝试：「你好」→「我想喝汽水」（看挡答人设）→「我的订单到哪了」→
-「先列出我所有的工单」→「我要退货」。
+「先列出我所有的工单」→「我要退货」→「转人工」（演示人工接管全链路）。
 
 ## 六、API 摘要
 
@@ -181,9 +196,17 @@ VITE_API_BASE=http://127.0.0.1:8094 npm run build
 | GET | `/api/my-orders/bookings` | 当前用户订单平铺列表 |
 | GET | `/api/recommendations` | 个性化推荐 |
 | GET | `/api/preferences` | 偏好读取/保存 |
+| GET | `/api/admin/conversations` | 【管理端】全部会话列表（ADMIN） |
+| GET | `/api/admin/conversations/{id}/messages` | 【管理端】会话消息回放（ADMIN） |
+| POST | `/api/admin/conversations/{id}/takeover` | 【管理端】接管会话 → HUMAN 模式（ADMIN） |
+| POST | `/api/admin/conversations/{id}/release` | 【管理端】结束接管 → AI 模式（ADMIN） |
+| POST | `/api/admin/conversations/{id}/human-message` | 【管理端】人工客服发言（ADMIN） |
 
 SSE 事件类型：`progress`（步骤进度）/ `thinking`（思考流）/ `message`（最终回复）/
 `message_id`（反馈用消息 ID）/ `suggestions`（推荐问题）/ `user_interaction`（追问交互）。
+
+转人工说明：用户发送「转人工」等表达时，L1 规则直接命中（不调 LLM），会话切为 HUMAN
+模式并下发系统提示；此后用户消息不再触发 Agent，直到管理端「结束接管」。
 
 ## 七、部署
 
@@ -193,10 +216,14 @@ NAS/Docker 部署（容器创建、jar 热更新、nginx 配置、灌库运维�
 ```
 NAS(host 网络)
 ├── llmentor-ecom-backend  (temurin:21-jre, 8094, 挂载 jar)
-├── llmentor-ecom-frontend (nginx:alpine,   8095, 反代 /api + /logs)
+├── llmentor-ecom-frontend (nginx:alpine,   8095, 反代 /api + /logs，C 端用户端)
+├── llmentor-ecom-admin    (nginx:alpine,   8097, 反代 /api，管理端客服工作台)
 ├── MySQL 3306 / Redis 6379
 └── Ollama 11434（可同机或独立机器，OLLAMA_BASE_URL 指定）
 ```
+
+管理端 nginx 配置见 `deploy/admin-nginx.conf`。注意：8096 在部分 NAS 上被
+智能家居 host-network 服务占用，选端口前先 `ss -tln` 确认。
 
 ## 八、开发说明
 
@@ -206,17 +233,18 @@ NAS(host 网络)
 ecom-agent/
 ├── src/main/java/com/ecom/cs/
 │   ├── agent/            # 10 个 Agent + 工具类（tools/）+ Hook（hook/）
-│   ├── business/         # 业务实体与服务（chat/booking/travel/ecom/recommend）
+│   ├── business/         # 业务实体与服务（chat/booking/travel/ecom/recommend/audit）
 │   ├── config/           # 模型装配、RAG 知识库、Sa-Token、MCP 注册
-│   ├── controller/       # REST + SSE 入口
+│   ├── controller/       # REST + SSE 入口（含 /api/admin/** 管理端接口）
 │   └── intent/           # L1 规则 / L2 向量 / L3 路由编排
 ├── src/main/resources/
 │   ├── prompts/          # 9 个 Agent 系统提示词（人设在此维护）
 │   ├── skills/           # 6 个外部 CLI 技能（tuniu-cli 等）
 │   ├── dataset/          # RAG 知识库文档（历史遗留差旅内容，P4 替换）
-│   ├── intent-seed.yml   # L2 向量种子语料（58 条）
-│   └── db/schema.sql     # 建表脚本（11 张表）
-├── frontend/             # React 19 + Vite + AntD
+│   ├── intent-seed.yml   # L2 向量种子语料
+│   └── db/schema.sql     # 建表脚本
+├── frontend/             # React 19 + Vite（C 端用户端，8095）
+├── admin/                # React 19 + Vite + zustand（B 端管理端，8097）
 └── deploy/               # NAS 部署配置 + 演示数据 + 乱码修复脚本
 ```
 
