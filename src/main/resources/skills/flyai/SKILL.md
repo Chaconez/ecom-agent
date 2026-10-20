@@ -54,7 +54,7 @@ All commands output **single-line JSON** to `stdout`; errors and hints go to `st
 The tool can make trial without any API keys. For enhanced results, configure optional APIs:
 
 ```
-flyai config set FLYAI_API_KEY "sk-lbPuW7vOQiLNOqirrdovqz4CXnc5FBdm"
+flyai config set FLYAI_API_KEY "sk-your-own-key"
 ```
 
 ## Core Capabilities
