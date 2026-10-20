@@ -44,7 +44,7 @@
 | `order_query` | 用户查询订单状态、物流进度、历史订单       | `bookingAgent` | "我的订单到哪了""查一下物流""发货了吗""我买过什么" |
 | `order_cancel` | 用户取消订单、退掉未付款订单            | `bookingAgent` | "取消订单""这个不要了""帮我退掉" |
 | `order_create` | 用户下单购买商品                | `bookingAgent` | "我要买这个""来一件""加入购物车""帮我下单" |
-| `ticket_submit` | 用户提交服务工单（投诉、建议、升级处理）      | `itineraryManageAgent` | "我要投诉""转人工""反馈个问题""提个工单" |
+| `ticket_submit` | 用户提交服务工单（投诉、建议、升级处理）      | `itineraryManageAgent` | "我要投诉""反馈个问题""提个工单" |
 | `ticket_query` | 用户查询工单处理进度、状态、结果         | `itineraryManageAgent` | "工单进度怎么样""我的投诉有结果了吗""工单到哪一步了" |
 | `ticket_cancel` | 用户取消/撤回已提交的工单            | `itineraryManageAgent` | "取消工单""撤回投诉""这个工单作废" |
 | `ticket_modify` | 用户修改/补充工单内容              | `itineraryManageAgent` | "修改工单""补充一下投诉信息""改一下工单描述" |
@@ -52,6 +52,7 @@
 | `product_consult` | 用户咨询商品信息、价格、活动规则、平台政策     | `infoAgent` | "这个多少钱""有优惠吗""什么材质的""怎么选" |
 | `general_info` | 天气、交通等通用信息查询              | `infoAgent` | "今天天气怎么样""怎么去仓库" |
 | `greeting` | 用户打招呼、寒暄                 | `masterAgent` | "你好""在吗" |
+| `transfer_human` | 用户明确要求转人工客服/真人服务（实时接管，非提交工单） | `masterAgent` | "转人工""来个真人""不想跟机器人说" |
 | `unknown` | 无法明确分类或信息严重不足             | `masterAgent` | 任何模糊、跨领域、缺少关键信息的问题 |
 
 ## 分类规则

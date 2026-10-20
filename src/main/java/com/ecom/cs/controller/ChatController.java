@@ -5,8 +5,10 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.ecom.cs.agent.common.ContinuationSignals;
 import com.ecom.cs.agent.context.AgentSessionContext;
 import com.ecom.cs.agent.context.AgentSessionContextHolder;
+import com.ecom.cs.agent.intent.IntentRuleMatcher;
 import com.ecom.cs.agent.registry.AgentRegistry;
 import com.ecom.cs.agent.service.ChatAgentExecutor;
+import com.ecom.cs.agent.service.ChatSseNotifier;
 import com.ecom.cs.agent.session.ActiveAgentSessionStore;
 import com.ecom.cs.business.chat.service.ChatHistoryService;
 import com.ecom.cs.controller.request.ChatRequest;
@@ -48,6 +50,13 @@ public class ChatController {
     private ChatAgentExecutor agentExecutor;
     @Autowired
     private ChatHistoryService chatHistoryService;
+    @Autowired
+    private IntentRuleMatcher intentRuleMatcher;
+    @Autowired
+    private ChatSseNotifier chatSseNotifier;
+
+    /** 转人工成功后下发给用户的系统提示（同时落库为 system 消息，供历史回放）。 */
+    private static final String TRANSFER_HUMAN_NOTICE = "已为您转接人工客服，请稍候，客服看到消息后会尽快回复您～";
 
     // ===================== 核心聊天接口 =====================
 
@@ -73,6 +82,23 @@ public class ChatController {
             agentExecutor.interruptPrevious(sessionId);
 
             SseEmitter emitter = agentExecutor.createEmitter();
+
+            // -------- 转人工前置拦截（确定性动作，不走 Agent 流水线、不调 LLM） --------
+            if (intentRuleMatcher.isTransferHumanRequest(message)) {
+                logger.info("[CHAT] 命中转人工意图，切换 HUMAN 模式 sessionId={}, userId={}", sessionId, userId);
+                chatHistoryService.switchConversationMode(sessionId, ChatHistoryService.MODE_HUMAN);
+                chatHistoryService.saveSystemMessage(sessionId, userId, TRANSFER_HUMAN_NOTICE);
+                chatSseNotifier.sendMessage(emitter, TRANSFER_HUMAN_NOTICE);
+                emitter.complete();
+                return emitter;
+            }
+
+            // -------- HUMAN 模式短路：人工客服接管中，AI 不响应，等管理端发言 --------
+            if (ChatHistoryService.MODE_HUMAN.equals(chatHistoryService.getConversationMode(sessionId))) {
+                logger.info("[CHAT] 会话处于 HUMAN 接管模式，跳过 Agent 流水线 sessionId={}", sessionId);
+                emitter.complete();
+                return emitter;
+            }
 
             Msg msg = Msg.builder()
                     .role(MsgRole.USER)

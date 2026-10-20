@@ -18,6 +18,11 @@ export interface Conversation {
   activeAgent: string;
   /** 问题推荐智能体生成的推荐问题 */
   suggestedQuestions: string[];
+  /**
+   * 会话模式：AI 智能助手应答 / HUMAN 人工客服接管（转人工）。
+   * HUMAN 模式下前端不发 Agent 请求等待态，改为轮询等待人工回复。
+   */
+  mode: 'AI' | 'HUMAN';
   createdAt: number;
   updatedAt: number;
   /** 是否从后端加载的历史会话 */
@@ -40,6 +45,8 @@ interface ChatState {
   setConversations: (conversations: Conversation[]) => void;
   loadConversationMessages: (id: string, messages: Message[]) => void;
   markConversationLoaded: (id: string) => void;
+  /** 更新会话模式（AI / HUMAN），转人工与结束接管时由轮询或发送结果驱动 */
+  setConversationMode: (id: string, mode: 'AI' | 'HUMAN') => void;
 
   // Derived helpers
   getCurrentConversation: () => Conversation | undefined;
@@ -117,6 +124,7 @@ const createNewConversation = (): Conversation => ({
   isThinking: false,
   activeAgent: 'MasterAgent',
   suggestedQuestions: [],
+  mode: 'AI',
   createdAt: Date.now(),
   updatedAt: Date.now(),
   isRemote: false,
@@ -180,6 +188,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set((state) => ({
       conversations: state.conversations.map((c) =>
         c.id === id ? { ...c, isLoaded: true } : c,
+      ),
+    })),
+
+  setConversationMode: (id, mode) =>
+    set((state) => ({
+      conversations: state.conversations.map((c) =>
+        c.id === id && c.mode !== mode ? { ...c, mode } : c,
       ),
     })),
 

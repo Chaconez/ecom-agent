@@ -19,6 +19,9 @@ public class ChatConversation {
 
     private String title;
 
+    /** 会话模式：AI 智能助手 / HUMAN 人工接管（转人工后由管理端客服应答）。 */
+    private String mode;
+
     @TableField(fill = FieldFill.INSERT, typeHandler = InstantTypeHandler.class)
     private Instant createdAt;
 
@@ -60,6 +63,14 @@ public class ChatConversation {
 
     public void setTitle(String title) {
         this.title = title;
+    }
+
+    public String getMode() {
+        return mode;
+    }
+
+    public void setMode(String mode) {
+        this.mode = mode;
     }
 
     public Instant getCreatedAt() {

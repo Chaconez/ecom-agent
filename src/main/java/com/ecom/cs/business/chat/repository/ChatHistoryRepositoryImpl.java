@@ -40,6 +40,13 @@ public class ChatHistoryRepositoryImpl implements ChatHistoryRepository {
     }
 
     @Override
+    public List<ChatConversation> findAllConversations() {
+        LambdaQueryWrapper<ChatConversation> wrapper = new LambdaQueryWrapper<>();
+        wrapper.orderByDesc(ChatConversation::getUpdatedAt);
+        return conversationMapper.selectList(wrapper);
+    }
+
+    @Override
     public List<ChatMessage> findMessagesByConversationId(String conversationId) {
         LambdaQueryWrapper<ChatMessage> wrapper = new LambdaQueryWrapper<>();
         wrapper.eq(ChatMessage::getConversationId, conversationId)
@@ -92,6 +99,14 @@ public class ChatHistoryRepositoryImpl implements ChatHistoryRepository {
         LambdaUpdateWrapper<ChatConversation> wrapper = new LambdaUpdateWrapper<>();
         wrapper.eq(ChatConversation::getConversationId, conversationId)
                 .set(ChatConversation::getTitle, title);
+        conversationMapper.update(wrapper);
+    }
+
+    @Override
+    public void updateMode(String conversationId, String mode) {
+        LambdaUpdateWrapper<ChatConversation> wrapper = new LambdaUpdateWrapper<>();
+        wrapper.eq(ChatConversation::getConversationId, conversationId)
+                .set(ChatConversation::getMode, mode);
         conversationMapper.update(wrapper);
     }
 

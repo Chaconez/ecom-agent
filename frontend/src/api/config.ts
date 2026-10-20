@@ -8,12 +8,38 @@
  * 2. 在侧边栏开启「集群轮询」开关后，每次 API 请求自动轮询下一个地址。
  *
  * 3. 未配置 VITE_CLUSTER_URLS 时，降级使用 VITE_API_BASE（默认 http://localhost:8080）。
+ *
+ * VITE_API_BASE 三态语义（构建期烘入，改后需重新 build）：
+ * - 未设置：本地开发默认 http://localhost:8080
+ * - 设置为空串（VITE_API_BASE=）：**同源模式**，运行时取 window.location.origin。
+ *   用于域名 + 反代部署（如 n.chacone.fun → nginx → 后端），构建产物不烘死任何
+ *   主机地址，任意域名/端口访问都能把 /api 请求打到同源服务上。
+ * - 设置为具体地址（如 http://192.168.3.3:8094）：直连该后端，
+ *   仅限调用方能访问该地址的场景（纯内网部署）。
  */
 
 import { useUiStore } from '../store/uiStore';
 
-/** 默认单实例地址 */
-const DEFAULT_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8080';
+/**
+ * 解析单实例模式下的默认后端地址。
+ * 同源模式（显式空串）让部署不再依赖构建机所在网络——这是移动端/外网访问的关键。
+ */
+function resolveDefaultBase(): string {
+  const raw = import.meta.env.VITE_API_BASE;
+  if (typeof raw === 'string') {
+    const trimmed = raw.trim();
+    if (trimmed !== '') {
+      return trimmed;
+    }
+    // 显式空串 = 同源模式：跟随页面地址，由反向代理转发 /api
+    if (typeof window !== 'undefined' && window.location?.origin) {
+      return window.location.origin;
+    }
+  }
+  return 'http://localhost:8080';
+}
+
+const DEFAULT_BASE = resolveDefaultBase();
 
 /** 从环境变量解析集群地址列表 */
 function parseClusterUrls(): string[] {

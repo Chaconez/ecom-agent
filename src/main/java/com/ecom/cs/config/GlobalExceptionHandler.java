@@ -2,6 +2,7 @@ package com.ecom.cs.config;
 
 import cn.dev33.satoken.exception.NotLoginException;
 import cn.dev33.satoken.exception.NotPermissionException;
+import cn.dev33.satoken.exception.NotRoleException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -16,6 +17,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 /**
  * 全局统一异常处理器。
@@ -48,6 +50,19 @@ public class GlobalExceptionHandler {
         return buildResponse(HttpStatus.FORBIDDEN, "无权限访问该资源");
     }
 
+    /**
+     * 角色校验失败（{@code @SaCheckRole}）。
+     *
+     * <p>注意：注解校验实际发生在 Sa-Token 拦截器层并由 {@code SaTokenConfigure}
+     * 直接写 JSON 响应，走不到这里；本处理器仅兜底控制器内直抛的场景。
+     * sa-token 1.39 中 {@code NotRoleException} 直接继承 {@code SaTokenException}
+     * （不经过 {@code NotPermissionException}），必须单独注册。</p>
+     */
+    @ExceptionHandler(NotRoleException.class)
+    public ResponseEntity<Map<String, Object>> handleNotRole(NotRoleException e) {
+        return buildResponse(HttpStatus.FORBIDDEN, "无权限访问该资源：需要管理员权限");
+    }
+
     // ===================== 400 请求参数异常 =====================
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -76,6 +91,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<Map<String, Object>> handleNoResource(NoResourceFoundException e) {
         return buildResponse(HttpStatus.NOT_FOUND, "请求的资源不存在");
+    }
+
+    @ExceptionHandler(NoSuchElementException.class)
+    public ResponseEntity<Map<String, Object>> handleNoSuchElement(NoSuchElementException e) {
+        logger.debug("[GlobalExceptionHandler] 资源不存在: {}", e.getMessage());
+        return buildResponse(HttpStatus.NOT_FOUND,
+                e.getMessage() == null ? "请求的资源不存在" : e.getMessage());
     }
 
     // ===================== 405 方法不支持 =====================

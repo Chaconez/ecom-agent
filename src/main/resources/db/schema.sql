@@ -106,6 +106,7 @@ CREATE TABLE IF NOT EXISTS `chat_conversation` (
     `conversation_id` VARCHAR(64)  NOT NULL COMMENT '会话ID（同前端 sessionId）',
     `user_id`         VARCHAR(64)  NOT NULL COMMENT '用户ID',
     `title`           VARCHAR(256) NOT NULL DEFAULT '新对话' COMMENT '会话标题',
+    `mode`            VARCHAR(16)  NOT NULL DEFAULT 'AI' COMMENT '会话模式：AI 智能助手 / HUMAN 人工接管',
     `created_at`      DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_at`      DATETIME     DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '最后更新时间',
     `deleted`         TINYINT      NOT NULL DEFAULT 0 COMMENT '逻辑删除标志',
@@ -371,3 +372,28 @@ VALUES
 -- ============================================================
 -- 电商智能客服：意图种子语料已外置至 intent-seed.yml（L2 向量库）
 -- ============================================================
+
+-- ============================================================
+-- 管理端（B 端）：操作审计日志（2026-10-21 新增）
+-- 记录管理端所有写操作（接管/释放/人工发言/审批决策），供审计页查询
+-- ============================================================
+CREATE TABLE IF NOT EXISTS `admin_audit_log` (
+    `id`            BIGINT       NOT NULL AUTO_INCREMENT COMMENT '自增主键',
+    `admin_user_id` VARCHAR(64)  NOT NULL COMMENT '操作人（sa-token loginId）',
+    `action`        VARCHAR(64)  NOT NULL COMMENT '动作：takeover/release/human_message/approval_decide',
+    `target_type`   VARCHAR(32)  NOT NULL COMMENT '对象类型：conversation/approval',
+    `target_id`     VARCHAR(64)  DEFAULT NULL COMMENT '对象ID（会话ID/工单ID）',
+    `detail`        JSON         DEFAULT NULL COMMENT '操作详情快照',
+    `created_at`    DATETIME     DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
+    PRIMARY KEY (`id`),
+    KEY `idx_admin_user` (`admin_user_id`),
+    KEY `idx_created_at` (`created_at`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '管理端操作审计日志';
+
+-- ============================================================
+-- 存量库迁移（2026-10-21）：chat_conversation 增加 mode 字段
+-- 新库已含在 CREATE TABLE 中；老库执行下面两句（幂等，重复执行报错可忽略）
+-- ============================================================
+-- ALTER TABLE `chat_conversation`
+--     ADD COLUMN `mode` VARCHAR(16) NOT NULL DEFAULT 'AI'
+--     COMMENT '会话模式：AI 智能助手 / HUMAN 人工接管' AFTER `title`;

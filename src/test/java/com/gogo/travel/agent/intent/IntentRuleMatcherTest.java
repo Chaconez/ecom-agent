@@ -58,8 +58,14 @@ class IntentRuleMatcherTest {
                 "修改工单内容", "补充一下投诉信息", "改一下工单描述");
 
         // —— 提交工单/投诉 TICKET_SUBMIT ——
+        // 注意：转人工类表达（转人工/找人工客服）已迁至 TRANSFER_HUMAN，不再归工单提交
         expect(cases, IntentCategory.TICKET_SUBMIT,
-                "我要投诉", "转人工", "找人工客服", "举报这家店", "客服态度太差了");
+                "我要投诉", "举报这家店", "客服态度太差了");
+
+        // —— 转人工 TRANSFER_HUMAN（确定性动作，ChatController 前置拦截）——
+        expect(cases, IntentCategory.TRANSFER_HUMAN,
+                "转人工", "找人工客服", "来个真人", "不想跟机器人说了",
+                "呼叫人工", "人工在吗", "客服介入");
 
         // —— 订单查询 ORDER_QUERY ——
         expect(cases, IntentCategory.ORDER_QUERY,
@@ -164,6 +170,41 @@ class IntentRuleMatcherTest {
         assertTrue(greeting.verdict() == IntentRuleMatcher.Verdict.HIT
                         && greeting.result().getPrimary() == IntentCategory.ORDER_QUERY,
                 "「你好，帮我查下订单」期望 HIT(ORDER_QUERY)，实际=" + greeting.verdict());
+    }
+
+    @Test
+    @DisplayName("isTransferHumanRequest：纯转人工请求应识别，复合句不误拦截")
+    void shouldIdentifyTransferHumanRequest() {
+        // 纯转人工表达 → true（ChatController 据此前置拦截）
+        List<String> transfer = List.of(
+                "转人工", "我要转人工客服", "找个真人来接", "不想跟机器人说了",
+                "人工在吗", "叫个人来答");
+        List<String> failures = new ArrayList<>();
+        for (String text : transfer) {
+            if (!matcher.isTransferHumanRequest(text)) {
+                failures.add(String.format("「%s」期望识别为转人工请求，实际=false", text));
+            }
+        }
+
+        // 复合句（转人工 + 其他意图）→ false：应走 AMBIGUOUS 放行 L3，不能被前置拦截吞掉
+        List<String> compound = List.of(
+                "转人工，另外帮我查下订单",
+                "先转人工，然后帮我取消这个订单");
+        for (String text : compound) {
+            if (matcher.isTransferHumanRequest(text)) {
+                failures.add(String.format("「%s」是复合句，不应被判定为纯转人工请求", text));
+            }
+        }
+
+        // 普通投诉仍是工单提交，不是转人工
+        List<String> notTransfer = List.of("我要投诉", "客服态度太差了", "举报这家店");
+        for (String text : notTransfer) {
+            if (matcher.isTransferHumanRequest(text)) {
+                failures.add(String.format("「%s」是工单提交，不应被判定为转人工请求", text));
+            }
+        }
+
+        assertTrue(failures.isEmpty(), buildReport("转人工判定不符合预期", failures));
     }
 
     // ----------------------------------------------------------------------

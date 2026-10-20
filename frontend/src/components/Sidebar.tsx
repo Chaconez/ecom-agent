@@ -76,6 +76,7 @@ const emptyConversation = (): Conversation => ({
   isThinking: false,
   activeAgent: 'MasterAgent',
   suggestedQuestions: [],
+  mode: 'AI',
   createdAt: Date.now(),
   updatedAt: Date.now(),
   isRemote: false,
@@ -120,6 +121,7 @@ export default function Sidebar() {
             title: c.title,
             createdAt: c.createdAt,
             updatedAt: c.updatedAt,
+            mode: c.mode === 'HUMAN' ? 'HUMAN' : 'AI',
             isRemote: true,
             isLoaded: false,
           };

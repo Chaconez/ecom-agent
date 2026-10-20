@@ -71,11 +71,17 @@ public class IntentRuleMatcher {
 
     /**
      * 子句切分符：标点 + 强连词 + 弱连接词。用于多意图守卫时把复合句拆成独立子句分别匹配。
-     * 弱连接词（还要/再查/和/跟等）只用于切分、不作为 L0 信号——单独出现歧义大，
+     * 弱连接词（还要/再查/和等）只用于切分、不作为 L0 信号——单独出现歧义大，
      * 误切分的碎片子句通常匹配不到规则，代价可控（"与"易误伤"参与"等词，不收录）。
+     *
+     * <p>刻意不收"跟"：转人工口语「不想跟机器人说了」会被"跟"切成
+     * ["不想", "机器人说了"] 两个都匹配不上规则的碎片，直接导致 L1 miss。
+     * "和"已覆盖主要并列场景（"查下订单和物流"），"跟"并列的复合句
+     * （"查订单跟问退款"）最坏情况是被优先级更高的规则（售后）单意图短路，
+     * 代价小于丢转人工意图。</p>
      */
     private static final Pattern CLAUSE_SPLITTER = Pattern.compile(
-            "[，。；！？!?;,、]|" + STRONG_CONJUNCTIONS + "|还要|还想|再帮|再给|再查|再订|再看|和|跟");
+            "[，。；！？!?;,、]|" + STRONG_CONJUNCTIONS + "|还要|还想|再帮|再给|再查|再订|再看|和");
 
     /**
      * 单条规则：keyword 任一命中且不含 negativeKeyword 即视为命中。
@@ -121,6 +127,13 @@ public class IntentRuleMatcher {
         addRule(IntentCategory.GREETING,
                 "^(?:" + greet + ")(?:" + sep + "(?:" + greet + "))*" + sep + "$");
 
+        // 转人工：用户明确要求真人客服接管，是确定性动作，L1 直接命中并在
+        // ChatController 前置拦截（不进入 Agent 流水线、不调 LLM）。
+        // 相关词已从 TICKET_SUBMIT 迁出——转人工是实时接管，不是提交工单。
+        addRule(IntentCategory.TRANSFER_HUMAN,
+                "(转人工|转接人工|人工客服|真人客服|人工服务|找客服|客服介入|客服升级"
+                        + "|来个真人|找个真人|叫个人来|换个人答|人工在吗|呼叫人工|不想跟.*机器人|不要机器人)");
+
         // 售后/退换货/发票：动作性极强，优先级最高；
         // 排除“退款规则/怎么退/能不能退”等规则类问法（那属于平台政策咨询）。
         addRule(IntentCategory.AFTER_SALE,
@@ -144,9 +157,12 @@ public class IntentRuleMatcher {
                         + "|(工单|投诉|客诉|服务单).*(改一下|修改|补充))",
                 "取消", "撤回", "撤销");
 
-        // 提交工单/投诉/转人工（新建服务单，区别于具体售后办理）。
+        // 提交工单/投诉（新建服务单，区别于具体售后办理）。
+        // 注意：转人工相关词（人工客服/转人工/真人客服/找客服/客服升级/客服介入）已迁至
+        // TRANSFER_HUMAN——那类是实时人工接管，不是工单；两类同时命中会触发 AMBIGUOUS 放行 L3。
+        // "态度.{0,3}差"覆盖"态度差/态度太差/态度很差/态度有点差"等口语变体。
         addRule(IntentCategory.TICKET_SUBMIT,
-                "(投诉|举报|人工客服|转人工|真人客服|客服升级|找客服|客服介入|客服态度|态度差|态度问题|反馈问题|提个?工单|建个?工单|开工单|提交工单|客诉|建议反馈|服务态度|骂|坑人|欺骗|虚假宣传)");
+                "(投诉|举报|客诉|态度.{0,3}差|态度问题|反馈问题|提个?工单|建个?工单|开工单|提交工单|建议反馈|服务态度|骂|坑人|欺骗|虚假宣传)");
 
         // 订单查询（状态/物流/历史订单）；排除售后动作与工单语境。
         addRule(IntentCategory.ORDER_QUERY,
@@ -154,8 +170,9 @@ public class IntentRuleMatcher {
                 "取消", "退", "下单", "买这个", "结算", "工单", "投诉", "服务单", "客诉");
 
         // 取消订单（未付款/未发货的直接取消）；已发货要退的走售后，故排除退款/退货/换货。
+        // "取消.{0,3}订单"覆盖"取消订单/取消这个订单/取消一下订单/取消我的订单"等口语变体。
         addRule(IntentCategory.ORDER_CANCEL,
-                "(取消订单|把(这)?订单(取消|退了?|退掉)|订单不要了|不要了|退掉|撤单|关闭订单)",
+                "(取消.{0,3}订单|把(这|那)?(个)?订单(取消|退了?|退掉)|订单不要了|不要了|退掉|撤单|关闭订单)",
                 "退款", "退货", "换货", "售后", "发票", "赔偿");
 
         // 下单购买（明确购买动作）；排除“值得买吗/好不好”等咨询式问法。
@@ -199,6 +216,20 @@ public class IntentRuleMatcher {
     public Optional<IntentRecognitionResult> match(String text) {
         Outcome outcome = evaluate(text);
         return outcome.verdict() == Verdict.HIT ? Optional.of(outcome.result()) : Optional.empty();
+    }
+
+    /**
+     * 判断输入是否为「转人工」确定性请求（供 ChatController 前置拦截）。
+     *
+     * <p>复用完整 {@link #evaluate} 链路（含多意图守卫），仅当 L1 单类命中
+     * {@link IntentCategory#TRANSFER_HUMAN} 时才返回 true——
+     * "转人工，另外帮我查下订单"这类复合句会走 AMBIGUOUS 放行 L3，由 LLM 正常编排，
+     * 不会在这里被误拦截。</p>
+     */
+    public boolean isTransferHumanRequest(String text) {
+        Outcome outcome = evaluate(text);
+        return outcome.verdict() == Verdict.HIT
+                && IntentCategory.TRANSFER_HUMAN == outcome.result().getPrimary();
     }
 
     /**

@@ -256,6 +256,8 @@ export async function confirmSensitiveToolSSE(
 export interface RemoteConversation {
   id: string;
   title: string;
+  /** 会话模式：AI 智能助手 / HUMAN 人工客服接管 */
+  mode?: 'AI' | 'HUMAN';
   createdAt: number;
   updatedAt: number;
 }

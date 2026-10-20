@@ -36,6 +36,8 @@ public enum IntentCategory {
     GENERAL_INFO("general_info", "InfoAgent", "天气/交通等通用信息查询"),
     /** 用户打招呼、寒暄。 */
     GREETING("greeting", "MasterAgent", "用户打招呼、寒暄"),
+    /** 用户明确要求转人工客服/真人服务（确定性动作，L1 规则直接命中，不走 LLM）。 */
+    TRANSFER_HUMAN("transfer_human", "MasterAgent", "用户要求转人工客服/真人服务"),
     /** 无法明确分类或信息严重不足。 */
     UNKNOWN("unknown", "MasterAgent", "无法明确分类或信息严重不足");
 

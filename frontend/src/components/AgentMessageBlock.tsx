@@ -24,6 +24,8 @@ const AGENT_LABELS: Record<string, string> = {
 
 function agentDisplayName(name?: string) {
   if (!name) return '电商智能客服';
+  // 人工客服接管时后端落库 agent_name = human:{adminUserId}，统一展示为「人工客服」
+  if (name.startsWith('human:')) return '人工客服';
   return AGENT_LABELS[name] || name;
 }
 

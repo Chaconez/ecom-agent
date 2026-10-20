@@ -17,6 +17,11 @@ public interface ChatHistoryRepository {
 
     List<ChatConversation> findConversationsByUserId(String userId);
 
+    /**
+     * 查询全部会话（管理端视角，不按用户过滤），按最后更新时间倒序。
+     */
+    List<ChatConversation> findAllConversations();
+
     List<ChatMessage> findMessagesByConversationId(String conversationId);
 
     /**
@@ -35,6 +40,11 @@ public interface ChatHistoryRepository {
     void saveMessage(ChatMessage message);
 
     void updateTitle(String conversationId, String title);
+
+    /**
+     * 更新会话模式（AI / HUMAN）。转人工与结束接管时调用。
+     */
+    void updateMode(String conversationId, String mode);
 
     /**
      * 更新指定消息的用户反馈。

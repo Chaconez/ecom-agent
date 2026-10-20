@@ -5,10 +5,31 @@ import { useChatStore, isPersistedMessageId } from '../store/chatStore';
 import { useAuthStore } from '../store/authStore';
 import { useUiStore } from '../store/uiStore';
 import { logout } from '../api/auth';
-import { sendChatMessageSSE, sendUserResponseSSE, interruptAgent, fetchMessages, updateMessageFeedback, fetchDebugAgents, sendDebugAgentMessageSSE, type DebugAgentInfo } from '../api/chat';
+import { sendChatMessageSSE, sendUserResponseSSE, interruptAgent, fetchMessages, fetchConversations, updateMessageFeedback, fetchDebugAgents, sendDebugAgentMessageSSE, type DebugAgentInfo, type RemoteMessage } from '../api/chat';
 import AgentMessageBlock from './AgentMessageBlock';
 import UserInteractionCard from './UserInteractionCard';
 import type { Message, PlanTask, UserInteraction, TravelData, BookingResult, PlanHtmlData } from '../types';
+
+/** HUMAN 模式（人工客服接管）下的轮询间隔（ms） */
+const HUMAN_MODE_POLL_INTERVAL = 3000;
+
+/** 把后端持久化消息映射为前端 Message（挂载加载与 HUMAN 轮询共用） */
+function toLocalMessage(m: RemoteMessage): Message {
+  return {
+    id: m.id,
+    role: m.role,
+    content: m.content,
+    agentName: m.agentName,
+    timestamp: m.timestamp,
+    progress: m.extra?.progress,
+    thinkingByAgent: m.extra?.thinkingByAgent,
+    planTasks: m.extra?.planTasks,
+    travelData: m.extra?.travelData,
+    timeline: m.extra?.timeline,
+    feedback: m.feedback ?? null,
+    feedbackAt: m.feedbackAt,
+  };
+}
 
 // ── Message bubble components ─────────────────────────────────────────────
 function UserBubble({ msg, username }: { msg: Message; username: string }) {
@@ -160,6 +181,7 @@ export default function ChatWindow() {
     setTimelinePlan,
     setMessageFeedback,
     setLastAgentMessageId,
+    setConversationMode,
   } = useChatStore();
 
   const currentConv = conversations.find((c) => c.id === currentConversationId);
@@ -167,6 +189,8 @@ export default function ChatWindow() {
   const isThinking = currentConv?.isThinking ?? false;
   const timeline = currentConv?.timeline ?? [];
   const suggestedQuestions = currentConv?.suggestedQuestions ?? [];
+  /** 人工客服接管模式：转人工后由管理端客服应答，AI 不再响应 */
+  const isHumanMode = currentConv?.mode === 'HUMAN';
 
   const lastMsg = messages.length > 0 ? messages[messages.length - 1] : null;
   const lastAgentIsStreaming =
@@ -179,21 +203,7 @@ export default function ChatWindow() {
     fetchMessages(currentConversationId)
       .then((remoteMessages) => {
         if (cancelled) return;
-        const messages: Message[] = remoteMessages.map((m) => ({
-          id: m.id,
-          role: m.role,
-          content: m.content,
-          agentName: m.agentName,
-          timestamp: m.timestamp,
-          progress: m.extra?.progress,
-          thinkingByAgent: m.extra?.thinkingByAgent,
-          planTasks: m.extra?.planTasks,
-          travelData: m.extra?.travelData,
-          timeline: m.extra?.timeline,
-          feedback: m.feedback ?? null,
-          feedbackAt: m.feedbackAt,
-        }));
-        loadConversationMessages(currentConversationId, messages);
+        loadConversationMessages(currentConversationId, remoteMessages.map(toLocalMessage));
       })
       .catch((err) => {
         if (err?.message === 'UNAUTHORIZED') {
@@ -210,6 +220,56 @@ export default function ChatWindow() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isThinking, timeline]);
+
+  /**
+   * HUMAN 模式（人工客服接管）轮询：
+   * - 每 3s 拉取会话列表刷新 mode（管理端「结束接管」后及时恢复 AI）；
+   * - 同时拉取消息列表，把管理端客服的发言合并进本地（服务端权威 + 本地未持久化消息去重保留）；
+   * - 轮询期间不打断 SSE：发送瞬间的转人工提示仍走流式事件，随后被服务端系统消息替换。
+   */
+  useEffect(() => {
+    if (!isHumanMode || !currentConversationId) return;
+    let cancelled = false;
+    const poll = async () => {
+      if (cancelled) return;
+      try {
+        const [convs, remoteMessages] = await Promise.all([
+          fetchConversations(),
+          fetchMessages(currentConversationId),
+        ]);
+        if (cancelled) return;
+        const remoteConv = convs.find((c) => c.id === currentConversationId);
+        if (remoteConv) {
+          setConversationMode(currentConversationId, remoteConv.mode === 'HUMAN' ? 'HUMAN' : 'AI');
+        }
+        // 服务端权威列表
+        const mapped = remoteMessages.map(toLocalMessage);
+        // 本地未持久化消息（如新会话欢迎语）去重后保留；刚发送的用户消息服务端已落库，按内容去重
+        const state = useChatStore.getState();
+        const conv = state.conversations.find((c) => c.id === currentConversationId);
+        const localOnly = (conv?.messages ?? []).filter(
+          (m) =>
+            !isPersistedMessageId(m.id) &&
+            !mapped.some((r) => r.role === m.role && r.content === m.content),
+        );
+        loadConversationMessages(
+          currentConversationId,
+          [...localOnly, ...mapped].sort((a, b) => a.timestamp - b.timestamp),
+        );
+      } catch (err: any) {
+        if (err?.message === 'UNAUTHORIZED') {
+          handleUnauthorized();
+        }
+        // 其余网络错误静默重试（下一轮轮询兜底）
+      }
+    };
+    const timer = setInterval(poll, HUMAN_MODE_POLL_INTERVAL);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHumanMode, currentConversationId]);
 
   // 加载可直连的子智能体列表（供右上角切换使用）
   useEffect(() => {
@@ -549,7 +609,10 @@ export default function ChatWindow() {
       content,
       timestamp: Date.now(),
     });
-    setThinking(true);
+    // HUMAN 模式（人工客服接管）不进入 AI 思考态：消息由人工回复，经轮询展示
+    if (!isHumanMode) {
+      setThinking(true);
+    }
     // 直连调试模式下，把展示用的 activeAgent 切到目标智能体
     if (debugAgent) {
       setActiveAgent(debugAgent);
@@ -569,7 +632,20 @@ export default function ChatWindow() {
         timestamp: Date.now(),
       });
     };
-    const onDone = () => setThinking(false);
+    const onDone = () => {
+      setThinking(false);
+      // 发送后同步会话模式：命中「转人工」时后端已切到 HUMAN，本地及时跟进并启动轮询
+      fetchConversations()
+        .then((convs) => {
+          const c = convs.find((x) => x.id === currentConversationId);
+          if (c) {
+            setConversationMode(currentConversationId, c.mode === 'HUMAN' ? 'HUMAN' : 'AI');
+          }
+        })
+        .catch(() => {
+          // 模式同步失败不阻塞：HUMAN 轮询启动失败时用户仍可手动刷新
+        });
+    };
 
     try {
       if (debugAgent) {
@@ -639,11 +715,18 @@ export default function ChatWindow() {
           <span className="chat-header-title">{currentConv?.title || '新对话'}</span>
         </div>
         <div className="chat-header-right">
-          {isThinking && (
-            <div className="chat-header-status">
-              <span className="status-dot" />
-              AI 处理中...
+          {isHumanMode ? (
+            <div className="chat-header-status human-mode">
+              <span className="status-dot human-dot" />
+              人工客服接管中
             </div>
+          ) : (
+            isThinking && (
+              <div className="chat-header-status">
+                <span className="status-dot" />
+                AI 处理中...
+              </div>
+            )
           )}
           <select
             className="debug-agent-select"
@@ -701,6 +784,20 @@ export default function ChatWindow() {
         {/* 兜底思考动画：处理中且没有任何时间轴内容 */}
         {isThinking && !lastAgentIsStreaming && timeline.length === 0 && <ThinkingDots />}
 
+        {/* HUMAN 模式等待提示：消息已发给人工客服，等待回复 */}
+        {isHumanMode && !isThinking && lastMsg?.role === 'user' && (
+          <div className="msg-row system">
+            <div className="msg-system-bubble human-waiting">
+              <span className="human-waiting-dots">
+                <span className="dot" />
+                <span className="dot" />
+                <span className="dot" />
+              </span>
+              消息已发送，人工客服将尽快回复，请稍候...
+            </div>
+          </div>
+        )}
+
         {/* 推荐问题：MasterAgent 返回后由问题推荐智能体生成 */}
         {!isThinking && suggestedQuestions.length > 0 && (
           <SuggestionChips questions={suggestedQuestions} onClick={sendText} />
@@ -738,6 +835,8 @@ export default function ChatWindow() {
             placeholder={
               isThinking
                 ? 'AI 正在处理，请稍候...'
+                : isHumanMode
+                ? '人工客服服务中，请输入您的问题...'
                 : interaction
                 ? '请先回答上方问题'
                 : '输入您的问题，按 Enter 发送，Shift+Enter 换行'

@@ -1,11 +1,13 @@
 package com.ecom.cs.controller;
 
 import cn.dev33.satoken.annotation.SaCheckLogin;
+import cn.dev33.satoken.annotation.SaCheckRole;
 import cn.dev33.satoken.stp.StpUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ecom.cs.business.approval.entity.ApprovalRecord;
 import com.ecom.cs.business.approval.entity.ApprovalRecordStatus;
 import com.ecom.cs.business.approval.service.ApprovalService;
+import com.ecom.cs.business.audit.service.AdminAuditService;
 import com.ecom.cs.business.auth.service.AuthService;
 import com.ecom.cs.business.order.service.TravelOrderService;
 import com.ecom.cs.controller.request.ApprovalDecisionRequest;
@@ -24,6 +26,8 @@ import org.springframework.web.bind.annotation.*;
 /**
  * 后台管理员审批接口。
  * <p>仅 role = ADMIN 的管理员用户可访问，用于查看待审批的审批单并做出通过/拒绝决策。
+ * 角色校验由 sa-token {@link SaCheckRole} 注解完成（配合 {@code SaTokenStpInterfaceImpl}），
+ * 校验失败抛 {@code NotRoleException} → 403，由全局异常处理器统一返回 JSON。</p>
  *
  * @author Hollis
  */
@@ -41,6 +45,8 @@ public class AdminApprovalController {
     private ApprovalService approvalService;
     @Autowired
     private TravelOrderService travelOrderService;
+    @Autowired
+    private AdminAuditService adminAuditService;
 
     /**
      * 查询审批单列表。
@@ -48,10 +54,8 @@ public class AdminApprovalController {
      */
     @GetMapping("/approvals")
     @SaCheckLogin
+    @SaCheckRole("ADMIN")
     public ResponseEntity<?> listApprovals(@RequestParam(required = false) String status) {
-        if (!isAdmin()) {
-            return forbidden();
-        }
         ApprovalRecordStatus statusFilter = ApprovalRecordStatus.of(status);
         List<ApprovalRecord> records = approvalService.list(statusFilter);
         List<Map<String, Object>> result = new ArrayList<>();
@@ -66,11 +70,10 @@ public class AdminApprovalController {
      */
     @PostMapping("/approvals/{processInstanceId}/decision")
     @SaCheckLogin
+    @SaCheckRole("ADMIN")
     public ResponseEntity<?> decide(@PathVariable String processInstanceId,
                                     @RequestBody ApprovalDecisionRequest request) {
-        if (!isAdmin()) {
-            return forbidden();
-        }
+        String adminUserId = StpUtil.getLoginIdAsString();
         boolean agree = "agree".equalsIgnoreCase(request.getDecision());
         boolean refuse = "refuse".equalsIgnoreCase(request.getDecision());
         if (!agree && !refuse) {
@@ -85,6 +88,14 @@ public class AdminApprovalController {
                     .body(Map.of("message", "审批单不存在或已被处理"));
         }
         ApprovalRecord record = updated.get();
+
+        // 审批决策属于管理端关键操作，记审计日志（异步，失败不影响主流程）
+        Map<String, Object> detail = new LinkedHashMap<>();
+        detail.put("decision", request.getDecision());
+        detail.put("remark", request.getRemark());
+        detail.put("resultStatus", record.getStatus() != null ? record.getStatus().getCode() : null);
+        adminAuditService.record(adminUserId, "approval_decide",
+                AdminAuditService.TARGET_APPROVAL, processInstanceId, detail);
 
         // 审批结果不主动推送给 Agent 会话：用户通过“我的差旅”页或对话中查询审批状态获知结果
         return ResponseEntity.ok(toView(record));
@@ -118,14 +129,5 @@ public class AdminApprovalController {
             logger.warn("[AdminApprovalController] 审批表单解析失败: {}", e.getMessage());
             return approvalForm;
         }
-    }
-
-    private boolean isAdmin() {
-        return authService.isAdmin(StpUtil.getLoginIdAsString());
-    }
-
-    private ResponseEntity<?> forbidden() {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(Map.of("message", "无权访问后台管理接口"));
     }
 }
