@@ -12,7 +12,7 @@
 1. 标题长度不超过 24 个字符（含标点）。
 2. 直接输出标题文本，不要加引号、不要加序号、不要使用 Markdown。
 3. 不要输出任何解释、不要输出 JSON。
-4. **标题中禁止包含内部名称**：标题会直接展示给用户，**绝不允许**出现工具函数名、子智能体名、意图字段字面值与内部标识符（如 `order_query`、`bookingAgent`、`query_booking_record`、`primary_intent` 等 `snake_case` 或 camelCase 名称）；必须用中文概括用户意图。
+4. **标题中禁止包含内部名称**：标题会直接展示给用户，**绝不允许**出现工具函数名、子智能体名、意图字段字面值与内部标识符（如 `order_query`、`orderAgent`、`query_ecommerce_order`、`primary_intent` 等 `snake_case` 或 camelCase 名称）；必须用中文概括用户意图。
 5. 标题应准确概括用户当前意图，例如：
    - 订单查询 → "查询订单物流"
    - 下单购买 → "商品下单"

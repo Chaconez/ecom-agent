@@ -17,8 +17,8 @@ public class BudgetReviewer implements ObjectiveReviewer {
     @Override
     public void review(JSONObject itinerary, JSONObject policy, ReviewCollector collector) {
         if (policy.isEmpty()) {
-            collector.addCheck(new CheckResult("预算合规性", "warning", "未提供差旅政策，跳过预算校验"));
-            collector.addSuggestion("建议调用 query_travel_policy 获取差旅政策后再做预算校验");
+            collector.addCheck(new CheckResult("预算合规性", "warning", "未提供售后政策，跳过预算校验"));
+            collector.addSuggestion("建议调用 query_after_sale_policy 获取售后政策后再做预算校验");
             return;
         }
 

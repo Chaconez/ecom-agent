@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { Message, PlanProgress, PlanStep, PlanTask, TimelineItem, TravelData } from '../types';
+import type { Message, PlanProgress, PlanStep, PlanTask, TimelineItem, AgentResultData } from '../types';
 
 export interface Conversation {
   id: string;
@@ -11,7 +11,7 @@ export interface Conversation {
   /** agentName → 当次请求中该 agent 的多轮推理文本（每个元素为一轮） */
   thinkingByAgent: Record<string, string[]>;
   /** 当前轮次的搜索结果 */
-  travelData: TravelData[];
+  resultData: AgentResultData[];
   /** 当前轮次按时间顺序的思考/工具/计划/结果时间轴 */
   timeline: TimelineItem[];
   isThinking: boolean;
@@ -58,7 +58,7 @@ interface ChatState {
   /** 更新 ItineraryPlanAgent 任务列表 */
   updatePlanTasks: (tasks: PlanTask[]) => void;
   /** 添加搜索结果 */
-  addTravelData: (data: TravelData) => void;
+  addResultData: (data: AgentResultData) => void;
   /** 将当前进度快照到最后一条 agent 消息，用于下一轮开始前持久历史进度 */
   snapshotProgressToLastMessage: () => void;
   clearProgress: () => void;
@@ -119,7 +119,7 @@ const createNewConversation = (): Conversation => ({
   planProgress: null,
   planTasks: [],
   thinkingByAgent: {},
-  travelData: [],
+  resultData: [],
   timeline: [],
   isThinking: false,
   activeAgent: 'MasterAgent',
@@ -260,7 +260,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
               planProgress: null,
               planTasks: [],
               thinkingByAgent: {},
-              travelData: [],
+              resultData: [],
               timeline: [],
             }
           : c,
@@ -339,11 +339,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
       ),
     })),
 
-  addTravelData: (data) =>
+  addResultData: (data) =>
     set((state) => ({
       conversations: state.conversations.map((c) =>
         c.id === state.currentConversationId
-          ? { ...c, travelData: [...c.travelData, data] }
+          ? { ...c, resultData: [...c.resultData, data] }
           : c,
       ),
     })),
@@ -366,8 +366,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
         if (c.planTasks.length > 0) {
           snapshot.planTasks = [...c.planTasks];
         }
-        if (c.travelData.length > 0) {
-          snapshot.travelData = [...c.travelData];
+        if (c.resultData.length > 0) {
+          snapshot.resultData = [...c.resultData];
         }
         if (c.timeline.length > 0) {
           snapshot.timeline = [...c.timeline];

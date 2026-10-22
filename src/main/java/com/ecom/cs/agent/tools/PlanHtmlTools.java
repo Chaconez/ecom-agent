@@ -4,7 +4,7 @@ import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.ecom.cs.agent.context.AgentSessionContext;
 import com.ecom.cs.agent.registry.SseEmitterRegistry;
-import com.ecom.cs.business.order.repo.TravelOrderRepository;
+import com.ecom.cs.business.order.repo.AfterSaleTicketRepository;
 import com.ecom.cs.config.sensitive.SensitiveMasker;
 import io.agentscope.core.tool.Tool;
 import io.agentscope.core.tool.ToolParam;
@@ -35,7 +35,7 @@ import java.util.Map;
  * <ol>
  *   <li>LLM 按 {@code html-plan} skill 的模板组合完整方案 HTML（含内联 CSS）</li>
  *   <li>LLM 调用 {@code save_plan_html} 工具，将 HTML 作为参数传入</li>
- *   <li>工具将 HTML 上传至 MinIO 持久化，并更新差旅单的 {@code plan_html_url} 字段</li>
+ *   <li>工具将 HTML 上传至 MinIO 持久化，并更新售后工单的 {@code plan_html_url} 字段</li>
  *   <li>同时通过 SSE {@code plan_html} 事件将 HTML 推送至前端（实时展示）</li>
  *   <li>工具返回简短成功消息，LLM 再输出一句确认文案作为最终回复</li>
  * </ol>
@@ -57,7 +57,7 @@ public class PlanHtmlTools {
     private MinioClient minioClient;
 
     @Autowired
-    private TravelOrderRepository travelOrderRepository;
+    private AfterSaleTicketRepository ticketRepository;
 
     @Value("${app.minio.bucket}")
     private String bucket;
@@ -68,13 +68,13 @@ public class PlanHtmlTools {
      * <p>LLM 在组合好完整方案 HTML 后调用此工具。工具会：
      * <ul>
      *   <li>将 HTML 上传至 MinIO 持久化（对象 key: plans/{orderId}/{timestamp}.html）</li>
-     *   <li>更新差旅单的 plan_html_url 字段（关联行程单 ID 时）</li>
+     *   <li>更新售后工单的 plan_html_url 字段（关联行程单 ID 时）</li>
      *   <li>通过 SSE {@code plan_html} 事件将 HTML 推送至前端（实时展示）</li>
      *   <li>返回成功消息，提示 LLM 只需输出简短确认文案</li>
      * </ul>
      *
      * @param html      完整的方案 HTML 字符串，必须包含内联 CSS（单文件 HTML）
-     * @param title     方案标题（如"上海 → 杭州 差旅行程方案"），可选
+     * @param title     方案标题（如"上海 → 杭州 售后行程方案"），可选
      * @param sessionCtx 会话上下文（框架自动注入，对 LLM 透明）
      * @return JSON 结果字符串
      */
@@ -90,7 +90,7 @@ public class PlanHtmlTools {
                             + "按 html-plan skill 的模板和样式约定生成。",
                     required = true) String html,
             @ToolParam(name = "title",
-                    description = "方案标题，如'上海 → 杭州 差旅行程方案'",
+                    description = "方案标题，如'上海 → 杭州 售后行程方案'",
                     required = false) String title,
             AgentSessionContext sessionCtx) {
 
@@ -108,32 +108,32 @@ public class PlanHtmlTools {
         logger.info("[PLAN_HTML] 收到方案 HTML，长度={}, sessionId={}", html.length(), sessionId);
 
         // 1. 上传 HTML 到 MinIO 持久化
-        String travelOrderId = sessionCtx != null ? sessionCtx.getTravelOrderId() : null;
-        String objectKey = buildObjectKey(travelOrderId, sessionId);
+        String ticketId = sessionCtx != null ? sessionCtx.getTicketId() : null;
+        String objectKey = buildObjectKey(ticketId, sessionId);
         String minioUrl = uploadToMinio(objectKey, html);
         boolean minioOk = minioUrl != null;
 
-        // 2. 关联差旅单：更新 plan_html_url 字段
-        if (travelOrderId != null && !travelOrderId.isBlank() && minioOk) {
+        // 2. 关联售后工单：更新 plan_html_url 字段
+        if (ticketId != null && !ticketId.isBlank() && minioOk) {
             try {
-                boolean updated = travelOrderRepository.updatePlanHtmlUrl(travelOrderId, objectKey);
+                boolean updated = ticketRepository.updatePlanHtmlUrl(ticketId, objectKey);
                 if (updated) {
-                    logger.info("[PLAN_HTML] 差旅单 {} 的 plan_html_url 已更新为 {}", travelOrderId, objectKey);
+                    logger.info("[PLAN_HTML] 售后工单 {} 的 plan_html_url 已更新为 {}", ticketId, objectKey);
                 } else {
-                    logger.warn("[PLAN_HTML] 差旅单 {} 不存在或更新失败", travelOrderId);
+                    logger.warn("[PLAN_HTML] 售后工单 {} 不存在或更新失败", ticketId);
                 }
             } catch (Exception e) {
-                logger.error("[PLAN_HTML] 更新差旅单 plan_html_url 失败, orderId={}", travelOrderId, e);
+                logger.error("[PLAN_HTML] 更新售后工单 plan_html_url 失败, orderId={}", ticketId, e);
             }
-        } else if (travelOrderId == null) {
-            logger.info("[PLAN_HTML] 无关联差旅单 ID，跳过 plan_html_url 更新（HTML 仍已保存至 MinIO）");
+        } else if (ticketId == null) {
+            logger.info("[PLAN_HTML] 无关联售后工单 ID，跳过 plan_html_url 更新（HTML 仍已保存至 MinIO）");
         }
 
         // 3. 通过 SSE 推送 HTML 至前端（实时展示）
         Map<String, Object> data = new LinkedHashMap<>();
         data.put("type", "plan_html");
         data.put("html", html);
-        data.put("title", title != null ? title : "差旅行程方案");
+        data.put("title", title != null ? title : "售后行程方案");
 
         SseEmitter emitter = emitterRegistry.get(sessionId);
         if (emitter != null) {
@@ -167,11 +167,11 @@ public class PlanHtmlTools {
     }
 
     /**
-     * 构建 MinIO 对象 key：plans/{travelOrderId or sessionId}/{timestamp}.html
+     * 构建 MinIO 对象 key：plans/{ticketId or sessionId}/{timestamp}.html
      */
-    private String buildObjectKey(String travelOrderId, String sessionId) {
-        String idPart = (travelOrderId != null && !travelOrderId.isBlank())
-                ? travelOrderId
+    private String buildObjectKey(String ticketId, String sessionId) {
+        String idPart = (ticketId != null && !ticketId.isBlank())
+                ? ticketId
                 : "session_" + sessionId;
         return "plans/" + idPart + "/" + System.currentTimeMillis() + ".html";
     }

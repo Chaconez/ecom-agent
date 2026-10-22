@@ -24,8 +24,8 @@ import java.util.stream.Stream;
  *
  * <p>两级保留期：
  * <ul>
- *   <li>登录输出文件（含授权链接）—— 超过 {@code travel.rgh.login-output-retention} 即删，默认 1 小时；</li>
- *   <li>整个用户目录 —— 最近修改时间超过 {@code travel.rgh.workspace-retention} 即删，默认 7 天。</li>
+ *   <li>登录输出文件（含授权链接）—— 超过 {@code ecom.rgh.login-output-retention} 即删，默认 1 小时；</li>
+ *   <li>整个用户目录 —— 最近修改时间超过 {@code ecom.rgh.workspace-retention} 即删，默认 7 天。</li>
  * </ul>
  *
  * @author Hollis
@@ -38,18 +38,18 @@ public class RghWorkspaceCleaner {
     @Autowired
     private RghWorkspace workspace;
 
-    /** 用户目录保留时长（秒），默认 7 天：足够覆盖连续出差场景，又不会长期堆积 */
-    @Value("${travel.rgh.workspace-retention-seconds:604800}")
+    /** 用户目录保留时长（秒），默认 7 天：足够覆盖连续售后场景，又不会长期堆积 */
+    @Value("${ecom.rgh.workspace-retention-seconds:604800}")
     private long workspaceRetentionSeconds;
 
     /** 登录输出文件保留时长（秒），默认 1 小时：授权窗口只有几分钟，过期即无用 */
-    @Value("${travel.rgh.login-output-retention-seconds:3600}")
+    @Value("${ecom.rgh.login-output-retention-seconds:3600}")
     private long loginOutputRetentionSeconds;
 
     /**
      * 每天 03:15 清理一次。选择凌晨低峰，避免与用户操作竞争同一目录。
      */
-    @Scheduled(cron = "${travel.rgh.cleanup-cron:0 15 3 * * ?}")
+    @Scheduled(cron = "${ecom.rgh.cleanup-cron:0 15 3 * * ?}")
     public void cleanup() {
         Path baseDir = workspace.baseDir();
         if (!Files.isDirectory(baseDir)) {

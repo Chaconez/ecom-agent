@@ -11,8 +11,8 @@ export type TimelineItem =
       arguments?: string;
     }
   | { kind: 'plan'; tasks: PlanTask[] }
-  | { kind: 'travel'; data: TravelData }
-  | { kind: 'booking'; data: BookingResult }
+  | { kind: 'result'; data: AgentResultData }
+  | { kind: 'order'; data: OrderResult }
   | { kind: 'plan_html'; data: PlanHtmlData };
 
 export interface Message {
@@ -28,7 +28,7 @@ export interface Message {
   /** 快照的 ItineraryPlanAgent 任务列表 */
   planTasks?: PlanTask[];
   /** 快照的搜索结果卡片 */
-  travelData?: TravelData[];
+  resultData?: AgentResultData[];
   /** 按时间顺序快照的思考/工具/计划/结果时间轴 */
   timeline?: TimelineItem[];
   /** 用户对当前模型回答的反馈：LIKE 点赞 / DISLIKE 点踩 / undefined 未反馈 */
@@ -82,85 +82,36 @@ export interface UserInteraction {
   allow_other?: boolean;
 }
 
-// ── 搜索结果类型 ───────────────────────────────────────────────────
-
-export interface FlightSegment {
-  depCityName: string;
-  depStationName: string;
-  depStationShortName?: string;
-  depTerm?: string;
-  depDateTime: string;
-  depWeekAbbrName?: string;
-  arrCityName: string;
-  arrStationName: string;
-  arrStationShortName?: string;
-  arrTerm?: string;
-  arrDateTime: string;
-  arrWeekAbbrName?: string;
-  duration: string;
-  transportType: string;
-  marketingTransportName?: string;
-  marketingTransportNo: string;
-  seatClassName: string;
-}
-
-export interface FlightItem {
-  adultPrice: string;
-  journeys: Array<{
-    journeyType: string;
-    segments: FlightSegment[];
-    totalDuration: string;
-  }>;
+/** 单条结果条目（商品、政策、知识等通用结构，字段按品类可选） */
+export interface ResultItem {
+  productId?: string;
+  name?: string;
+  title?: string;
+  category?: string;
+  brand?: string;
+  price?: string;
+  originalPrice?: string;
+  tags?: string;
+  rating?: string;
+  sales?: number;
+  imageEmoji?: string;
+  imageUrl?: string;
   jumpUrl?: string;
-  totalDuration?: string;
-}
-
-export interface HotelItem {
-  name: string;
-  address: string;
-  brandName?: string;
-  price: string;
-  score?: string;
-  scoreDesc?: string;
-  star?: string;
-  review?: string;
-  mainPic?: string;
-  interestsPoi?: string;
   detailUrl?: string;
+  productUrl?: string;
+  [key: string]: unknown;
 }
 
-export interface TrainSegment {
-  depCityName: string;
-  depStationName: string;
-  depDateTime: string;
-  arrCityName: string;
-  arrStationName: string;
-  arrDateTime: string;
-  duration: string;
-  transportType: string;
-  marketingTransportNo: string;
-  seatClassName: string;
-}
-
-export interface TrainItem {
-  adultPrice: string;
-  journeys: Array<{
-    journeyType: string;
-    segments: TrainSegment[];
-    totalDuration: string;
-  }>;
-  jumpUrl?: string;
-}
-
-export interface TravelData {
-  type: 'flight' | 'hotel' | 'train' | 'unknown';
-  items: FlightItem[] | HotelItem[] | TrainItem[] | Record<string, unknown>[];
+/** 智能体返回的可视化结果集，type 为品类标识（product / unknown 等） */
+export interface AgentResultData {
+  type: string;
+  items: ResultItem[];
 }
 
 /** 下单成功结果，用于渲染带“立即支付”按钮的支付卡片 */
-export interface BookingResult {
-  type: 'booking_result';
-  bizType: 'flight' | 'hotel' | 'train' | 'unknown';
+export interface OrderResult {
+  type: 'order_result';
+  bizType: 'goods' | 'service' | 'unknown';
   bizTypeLabel: string;
   orderId: string;
   title?: string;

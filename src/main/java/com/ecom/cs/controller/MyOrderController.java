@@ -5,14 +5,14 @@ import cn.dev33.satoken.stp.StpUtil;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import com.ecom.cs.agent.context.AgentSessionContext;
-import com.ecom.cs.agent.tools.BookingWriteTools;
+import com.ecom.cs.agent.tools.OrderWriteTools;
 import com.ecom.cs.business.approval.entity.ApprovalRecord;
 import com.ecom.cs.business.approval.service.ApprovalService;
-import com.ecom.cs.business.booking.entity.BookingRecord;
-import com.ecom.cs.business.booking.repo.BookingRecordRepository;
-import com.ecom.cs.business.order.entity.TravelOrder;
-import com.ecom.cs.business.order.entity.TravelOrderStatus;
-import com.ecom.cs.business.order.repo.TravelOrderRepository;
+import com.ecom.cs.business.order.entity.EcommerceOrder;
+import com.ecom.cs.business.order.repo.EcommerceOrderRepository;
+import com.ecom.cs.business.order.entity.AfterSaleTicket;
+import com.ecom.cs.business.order.entity.AfterSaleTicketStatus;
+import com.ecom.cs.business.order.repo.AfterSaleTicketRepository;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -45,7 +45,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 普通用户「我的订单」入口：聚合展示当前登录用户的订单（预订记录）与差旅单信息。
+ * 普通用户「我的订单」入口：聚合展示当前登录用户的订单（预订记录）与售后工单信息。
  *
  * <p>与后台客服的 {@link AdminApprovalController} 不同，本接口不做角色校验，
  * 仅按 {@code StpUtil.getLoginIdAsString()} 隔离数据租户。</p>
@@ -60,7 +60,7 @@ public class MyOrderController {
     private static final Logger logger = LoggerFactory.getLogger(MyOrderController.class);
 
     /**
-     * 用中文书写的常见境外目的地（含国家 / 地区 / 城市），命中即视为国际差旅。不是所有城市和国家都包含，因为出差一般是去有业务往来的地区。
+     * 用中文书写的常见境外目的地（含国家 / 地区 / 城市），命中即视为国际售后。不是所有城市和国家都包含，因为售后一般是去有业务往来的地区。
      * <p>说明：香港 / 澳门 / 台湾按简化口径视为境内，不在此列表内。</p>
      */
     private static final Set<String> INTERNATIONAL_KEYWORDS = Set.of(
@@ -102,76 +102,76 @@ public class MyOrderController {
             "墨西哥", "墨西哥城");
 
     @Autowired
-    private TravelOrderRepository travelOrderRepository;
+    private AfterSaleTicketRepository ticketRepository;
     @Autowired
     private ApprovalService approvalService;
     @Autowired
-    private BookingRecordRepository bookingRecordRepository;
+    private EcommerceOrderRepository orderRepository;
     @Autowired
-    private BookingWriteTools bookingWriteTools;
+    private OrderWriteTools orderWriteTools;
     @Autowired
     private MinioClient minioClient;
     @Value("${app.minio.bucket}")
     private String minioBucket;
 
     /**
-     * 查询当前登录用户的全部出差申请，含每单最新审批状态与预订摘要。
+     * 查询当前登录用户的全部售后工单，含最新审批状态与订单摘要。
      * <p>按创建时间倒序返回，方便前端顶部优先展示最新申请。</p>
      */
-    @GetMapping("/orders")
+    @GetMapping("/tickets")
     @SaCheckLogin
     public List<Map<String, Object>> listMyOrders() {
         String userId = StpUtil.getLoginIdAsString();
-        List<TravelOrder> orders = travelOrderRepository.findByUserId(userId);
+        List<AfterSaleTicket> orders = ticketRepository.findByUserId(userId);
         // 按创建时间倒序（null 视为最早）
-        orders.sort(Comparator.comparing(TravelOrder::getCreatedAt,
+        orders.sort(Comparator.comparing(AfterSaleTicket::getCreatedAt,
                 Comparator.nullsLast(Comparator.reverseOrder())));
 
         List<Map<String, Object>> result = new ArrayList<>(orders.size());
-        for (TravelOrder order : orders) {
+        for (AfterSaleTicket order : orders) {
             result.add(toView(userId, order));
         }
-        logger.info("[MyOrderController] userId={} 返回 {} 条差旅单", userId, result.size());
+        logger.info("[MyOrderController] userId={} 返回 {} 条工单", userId, result.size());
         return result;
     }
 
     /**
-     * 查询当前登录用户的全部订单（预订记录平铺视图）。
-     * <p>按下单时间倒序返回，供「我的订单」页面直接渲染，无需差旅单维度聚合。</p>
+     * 查询当前登录用户的全部订单（电商订单平铺视图）。
+     * <p>按下单时间倒序返回，供「我的订单」页面直接渲染。</p>
      */
-    @GetMapping("/bookings")
+    @GetMapping("/orders")
     @SaCheckLogin
-    public List<Map<String, Object>> listMyBookings() {
+    public List<Map<String, Object>> listMyOrdersFlat() {
         String userId = StpUtil.getLoginIdAsString();
-        List<BookingRecord> bookings = bookingRecordRepository.findByUserId(userId);
+        List<EcommerceOrder> bookings = orderRepository.findByUserId(userId);
         // 按下单时间倒序（null 视为最早）
-        bookings.sort(Comparator.comparing(BookingRecord::getBookedAt,
+        bookings.sort(Comparator.comparing(EcommerceOrder::getOrderedAt,
                 Comparator.nullsLast(Comparator.reverseOrder())));
 
         List<Map<String, Object>> result = new ArrayList<>(bookings.size());
-        for (BookingRecord br : bookings) {
-            result.add(toBookingView(br));
+        for (EcommerceOrder br : bookings) {
+            result.add(toOrderView(br));
         }
         logger.info("[MyOrderController] userId={} 返回 {} 条订单", userId, result.size());
         return result;
     }
 
     /**
-     * 查看指定差旅单的行程方案 HTML。
+     * 查看指定工单的方案详情 HTML。
      * <p>从 MinIO 读取持久化的方案 HTML，直接返回 text/html 给前端渲染。
-     * 仅允许差旅单所属用户访问。
+     * 仅允许工单所属用户访问。
      */
     @GetMapping("/plan-html/{orderId}")
     @SaCheckLogin
     public ResponseEntity<String> getPlanHtml(@PathVariable String orderId) {
         String userId = StpUtil.getLoginIdAsString();
-        Optional<TravelOrder> orderOpt = travelOrderRepository.findByOrderId(orderId);
+        Optional<AfterSaleTicket> orderOpt = ticketRepository.findByOrderId(orderId);
         if (orderOpt.isEmpty()) {
             return ResponseEntity.notFound().build();
         }
-        TravelOrder order = orderOpt.get();
+        AfterSaleTicket order = orderOpt.get();
         if (!userId.equals(order.getUserId())) {
-            return ResponseEntity.status(403).body("无权访问该差旅单");
+            return ResponseEntity.status(403).body("无权访问该工单");
         }
         String objectKey = order.getPlanHtmlUrl();
         if (objectKey == null || objectKey.isBlank()) {
@@ -197,51 +197,51 @@ public class MyOrderController {
      * 删除指定预订记录（逻辑删除）。
      * <p>仅允许记录归属当前登录用户时执行，防止越权操作。</p>
      */
-    @DeleteMapping("/bookings/{bookingId}")
+    @DeleteMapping("/orders/{orderNo}")
     @SaCheckLogin
-    public ResponseEntity<Map<String, Object>> deleteBooking(@PathVariable String bookingId) {
+    public ResponseEntity<Map<String, Object>> deleteBooking(@PathVariable String orderNo) {
         String userId = StpUtil.getLoginIdAsString();
-        boolean deleted = bookingRecordRepository.deleteByBookingIdAndUserId(bookingId, userId);
+        boolean deleted = orderRepository.deleteByOrderNoAndUserId(orderNo, userId);
         if (!deleted) {
-            logger.warn("[MyOrderController] 删除预订记录失败或无权操作, userId={}, bookingId={}", userId, bookingId);
-            return ResponseEntity.status(404).body(Map.of("deleted", false, "message", "预订记录不存在或无权删除"));
+            logger.warn("[MyOrderController] 删除订单失败或无权操作, userId={}, orderNo={}", userId, orderNo);
+            return ResponseEntity.status(404).body(Map.of("deleted", false, "message", "订单不存在或无权删除"));
         }
-        logger.info("[MyOrderController] 删除预订记录成功, userId={}, bookingId={}", userId, bookingId);
+        logger.info("[MyOrderController] 删除订单成功, userId={}, orderNo={}", userId, orderNo);
         return ResponseEntity.ok(Map.of("deleted", true));
     }
 
     /**
-     * 取消指定预订记录（同步调用第三方平台取消接口 + 更新内部状态为 CANCELLED）。
-     * <p>机票/火车票会通过 tuniu-cli 调用平台取消接口；酒店仅标记内部状态。</p>
+     * 取消指定订单（同步调用渠道取消接口 + 更新内部状态为 CANCELLED）。
+     * <p>可取消订单会调用渠道取消接口；渠道不支持时仅标记内部状态。</p>
      * <p>取消与删除的区别：取消会在平台侧同步取消订单，删除仅做本地逻辑删除。</p>
      */
-    @PostMapping("/bookings/{bookingId}/cancel")
+    @PostMapping("/orders/{orderNo}/cancel")
     @SaCheckLogin
-    public ResponseEntity<Map<String, Object>> cancelBooking(@PathVariable String bookingId,
+    public ResponseEntity<Map<String, Object>> cancelOrder(@PathVariable String orderNo,
                                                               @RequestBody(required = false) Map<String, String> body) {
         String userId = StpUtil.getLoginIdAsString();
         String reason = body != null ? body.get("reason") : null;
-        logger.info("[MyOrderController] 取消预订, userId={}, bookingId={}, reason={}", userId, bookingId, reason);
+        logger.info("[MyOrderController] 取消订单, userId={}, orderNo={}, reason={}", userId, orderNo, reason);
 
-        // 构造轻量 AgentSessionContext 供 BookingWriteTools 读取 userId
+        // 构造轻量 AgentSessionContext 供 OrderWriteTools 读取 userId
         AgentSessionContext sessionCtx = new AgentSessionContext(userId, "my-orders-" + UUID.randomUUID());
-        String resultJson = bookingWriteTools.cancelBooking(sessionCtx, bookingId, reason);
+        String resultJson = orderWriteTools.cancelOrder(sessionCtx, orderNo, reason);
 
         JSONObject result = JSON.parseObject(resultJson);
         boolean success = Boolean.TRUE.equals(result.getBoolean("success"));
         if (!success) {
             String errorCode = result.getString("errorCode");
             String message = result.getString("message");
-            logger.warn("[MyOrderController] 取消预订失败, userId={}, bookingId={}, errorCode={}, message={}",
-                    userId, bookingId, errorCode, message);
+            logger.warn("[MyOrderController] 取消订单失败, userId={}, orderNo={}, errorCode={}, message={}",
+                    userId, orderNo, errorCode, message);
             return ResponseEntity.badRequest().body(Map.of("cancelled", false, "message", message != null ? message : "取消失败"));
         }
-        logger.info("[MyOrderController] 取消预订成功, userId={}, bookingId={}", userId, bookingId);
+        logger.info("[MyOrderController] 取消订单成功, userId={}, orderNo={}", userId, orderNo);
         return ResponseEntity.ok(Map.of("cancelled", true, "message", result.getString("message")));
     }
 
-    /** 将差旅单 + 关联审批 + 关联预订记录聚合为前端视图 */
-    private Map<String, Object> toView(String userId, TravelOrder order) {
+    /** 将售后工单 + 关联审批 + 关联预订记录聚合为前端视图 */
+    private Map<String, Object> toView(String userId, AfterSaleTicket order) {
         Map<String, Object> view = new LinkedHashMap<>();
         view.put("orderId", order.getOrderId());
         view.put("destination", order.getDestination());
@@ -249,7 +249,7 @@ public class MyOrderController {
         view.put("departureDate", order.getDepartureDate());
         view.put("returnDate", order.getReturnDate());
         view.put("purpose", order.getPurpose());
-        TravelOrderStatus status = order.getStatus();
+        AfterSaleTicketStatus status = order.getStatus();
         view.put("status", status != null ? status.getCode() : null);
         view.put("statusLabel", status != null ? status.getLabel() : null);
         view.put("createdAt", toMillis(order.getCreatedAt()));
@@ -257,7 +257,7 @@ public class MyOrderController {
         view.put("international", isInternational(order.getDestination()));
         view.put("planHtmlUrl", order.getPlanHtmlUrl());
 
-        // 审批信息（取该差旅单最新一条审批记录）
+        // 审批信息（取该工单最新一条审批记录）
         Optional<ApprovalRecord> approvalOpt = approvalService.findLatestByOrderId(order.getOrderId());
         if (approvalOpt.isPresent()) {
             ApprovalRecord ar = approvalOpt.get();
@@ -276,20 +276,20 @@ public class MyOrderController {
             view.put("approvalUpdateTime", null);
         }
 
-        // 预订记录
-        List<BookingRecord> bookings = bookingRecordRepository.findByUserIdAndTravelOrderId(userId, order.getOrderId());
-        List<Map<String, Object>> bookingViews = new ArrayList<>(bookings.size());
-        for (BookingRecord br : bookings) {
-            bookingViews.add(toBookingView(br));
+        // 关联订单
+        List<EcommerceOrder> relatedOrders = orderRepository.findByUserIdAndTicketId(userId, order.getOrderId());
+        List<Map<String, Object>> bookingViews = new ArrayList<>(relatedOrders.size());
+        for (EcommerceOrder br : relatedOrders) {
+            bookingViews.add(toOrderView(br));
         }
-        view.put("bookings", bookingViews);
-        view.put("bookingCount", bookingViews.size());
+        view.put("orders", bookingViews);
+        view.put("orderCount", bookingViews.size());
         return view;
     }
 
-    private Map<String, Object> toBookingView(BookingRecord br) {
+    private Map<String, Object> toOrderView(EcommerceOrder br) {
         Map<String, Object> v = new LinkedHashMap<>();
-        v.put("bookingId", br.getBookingId());
+        v.put("orderNo", br.getOrderNo());
         v.put("bizType", br.getBizType() != null ? br.getBizType().getCode() : null);
         v.put("bizTypeLabel", br.getBizType() != null ? br.getBizType().getLabel() : null);
         v.put("title", br.getTitle());
@@ -304,7 +304,7 @@ public class MyOrderController {
         v.put("paymentStatus", br.getPaymentStatus());
         v.put("startTime", toMillis(br.getStartTime()));
         v.put("endTime", toMillis(br.getEndTime()));
-        v.put("bookedAt", toMillis(br.getBookedAt()));
+        v.put("orderedAt", toMillis(br.getOrderedAt()));
         v.put("orderUrl", buildOrderUrl(br));
         return v;
     }
@@ -314,10 +314,10 @@ public class MyOrderController {
     }
 
     /**
-     * 根据预订平台与外部单号构造第三方平台订单详情页 URL。
+     * 根据下单渠道与外部单号构造第三方平台订单详情页 URL。
      * <p>不同平台的 URL 模板不同，若平台或单号缺失则返回 null，前端不展示跳转入口。</p>
      */
-    private String buildOrderUrl(BookingRecord br) {
+    private String buildOrderUrl(EcommerceOrder br) {
         String platform = br.getPlatform();
         String orderNo = br.getExternalOrderNo();
         if (platform == null || platform.isBlank() || orderNo == null || orderNo.isBlank()) {
@@ -332,7 +332,7 @@ public class MyOrderController {
     }
 
     /**
-     * 简单判断目的地是否属于国际差旅：
+     * 简单判断目的地是否属于国际售后：
      * <ol>
      *   <li>为空或纯 CJK 汉字且未命中境外关键词 → 视为境内；</li>
      *   <li>包含任何非 CJK 字符（英文名 / 拼音等） → 视为境外；</li>

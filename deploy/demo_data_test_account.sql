@@ -33,24 +33,24 @@ VALUES
 
 -- 4. 商品订单（booking_record，biz_type=GOODS）
 INSERT IGNORE INTO `booking_record`
-    (`booking_id`, `user_id`, `conversation_id`, `travel_order_id`, `biz_type`, `platform`, `external_order_no`, `status`, `external_status`, `payment_status`, `title`, `total_amount`, `currency`, `contact_name`, `contact_phone`, `start_time`, `end_time`, `detail`, `remark`, `booked_at`)
+    (`order_no`, `user_id`, `conversation_id`, `after_sale_ticket_id`, `biz_type`, `platform`, `external_order_no`, `status`, `external_status`, `payment_status`, `title`, `total_amount`, `currency`, `contact_name`, `contact_phone`, `start_time`, `end_time`, `detail`, `remark`, `ordered_at`)
 VALUES
-    ('bk_20261018_701', 'u_test', NULL, NULL, 'GOODS', 'ecom-mall', 'EC20261018001', 'CONFIRMED', '已发货', 'PAID',
+    ('ec_20261018_701', 'u_test', NULL, NULL, 'GOODS', 'ecom-mall', 'EC20261018001', 'CONFIRMED', '已发货', 'PAID',
      '主动降噪无线蓝牙耳机 Pro × 1', 799.00, 'CNY', '测试账号', '13800000007',
      '2026-10-18 10:00:00', NULL,
      '{"product_id":"p_001","quantity":1,"address":"上海市浦东新区演示路 1 号","logistics":{"carrier":"顺丰","trackingNo":"SF1234567890","status":"运输中"}}',
      '示例数据', '2026-10-18 10:00:00'),
-    ('bk_20261015_702', 'u_test', NULL, NULL, 'GOODS', 'ecom-mall', 'EC20261015002', 'PENDING_PAYMENT', '待支付', 'UNPAID',
+    ('ec_20261015_702', 'u_test', NULL, NULL, 'GOODS', 'ecom-mall', 'EC20261015002', 'PENDING_PAYMENT', '待支付', 'UNPAID',
      '缓震专业跑步鞋 × 1', 459.00, 'CNY', '测试账号', '13800000007',
      '2026-10-15 20:30:00', NULL,
      '{"product_id":"p_009","quantity":1,"address":"上海市浦东新区演示路 1 号"}',
      '示例数据', '2026-10-15 20:30:00'),
-    ('bk_20261010_703', 'u_test', NULL, NULL, 'GOODS', 'ecom-mall', 'EC20261010003', 'COMPLETED', '已完成', 'PAID',
+    ('ec_20261010_703', 'u_test', NULL, NULL, 'GOODS', 'ecom-mall', 'EC20261010003', 'COMPLETED', '已完成', 'PAID',
      '三合一防风冲锋衣 × 1', 659.00, 'CNY', '测试账号', '13800000007',
      '2026-10-10 09:00:00', '2026-10-13 16:00:00',
      '{"product_id":"p_008","quantity":1,"address":"上海市浦东新区演示路 1 号"}',
      '示例数据', '2026-10-10 09:00:00'),
-    ('bk_20261005_704', 'u_test', NULL, NULL, 'GOODS', 'ecom-mall', 'EC20261005004', 'CANCELLED', '已取消', NULL,
+    ('ec_20261005_704', 'u_test', NULL, NULL, 'GOODS', 'ecom-mall', 'EC20261005004', 'CANCELLED', '已取消', NULL,
      'SPF50+ 清爽防晒霜 × 2', 258.00, 'CNY', '测试账号', '13800000007',
      '2026-10-05 15:00:00', NULL,
      '{"product_id":"p_012","quantity":2,"address":"上海市浦东新区演示路 1 号"}',

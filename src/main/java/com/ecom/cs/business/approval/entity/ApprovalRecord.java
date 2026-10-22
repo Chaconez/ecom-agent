@@ -8,7 +8,7 @@ import com.ecom.cs.config.InstantTypeHandler;
 import java.time.Instant;
 
 /**
- * 差旅审批记录
+ * 售后审批记录
  *
  * @author Hollis
  */
@@ -26,7 +26,7 @@ public class ApprovalRecord {
     private Instant submitTime;
     @TableField(typeHandler = InstantTypeHandler.class)
     private Instant updateTime;
-    /** 关联的差旅单ID */
+    /** 关联的售后工单ID */
     private String orderId;
 
     public ApprovalRecord() {

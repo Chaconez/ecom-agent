@@ -9,7 +9,7 @@ import java.util.List;
 
 /**
  * 维度 5：交通舱位/席别合规性校验。
- * 校验航班舱位、高铁席别是否超出差旅政策允许的最高等级。
+ * 校验航班舱位、高铁席别是否超出售后政策允许的最高等级。
  *
  * @author Hollis
  */
@@ -18,14 +18,14 @@ public class TransportReviewer implements ObjectiveReviewer {
     @Override
     public void review(JSONObject itinerary, JSONObject policy, ReviewCollector collector) {
         if (policy.isEmpty()) {
-            collector.addCheck(new CheckResult("交通舱位合规性", "warning", "未提供差旅政策，跳过舱位校验"));
+            collector.addCheck(new CheckResult("交通舱位合规性", "warning", "未提供售后政策，跳过舱位校验"));
             return;
         }
 
         String flightClass = policy.getString("flightClass");
         String trainSeatClass = policy.getString("trainSeatClass");
         if (flightClass == null && trainSeatClass == null) {
-            collector.addCheck(new CheckResult("交通舱位合规性", "pass", "差旅政策未限定舱位/席别"));
+            collector.addCheck(new CheckResult("交通舱位合规性", "pass", "售后政策未限定舱位/席别"));
             return;
         }
 
@@ -47,7 +47,7 @@ public class TransportReviewer implements ObjectiveReviewer {
         }
 
         if (violations.isEmpty()) {
-            collector.addCheck(new CheckResult("交通舱位合规性", "pass", "交通舱位/席别符合差旅政策"));
+            collector.addCheck(new CheckResult("交通舱位合规性", "pass", "交通舱位/席别符合售后政策"));
         } else {
             collector.addIssues(violations);
             collector.addCheck(new CheckResult("交通舱位合规性", "warning", "存在舱位/席别超标：" + String.join("；", violations)));

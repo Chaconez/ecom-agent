@@ -6,9 +6,9 @@ function authHeaders(): Record<string, string> {
   return token ? { Authorization: token } : {};
 }
 
-/** 单条订单记录（由预订记录平铺而来） */
-export interface MyOrderBooking {
-  bookingId: string;
+/** 单条订单记录（电商订单平铺视图） */
+export interface MyOrder {
+  orderNo: string;
   bizType: string | null;
   bizTypeLabel: string | null;
   title: string | null;
@@ -22,14 +22,14 @@ export interface MyOrderBooking {
   paymentStatus: string | null;
   startTime: number | null;
   endTime: number | null;
-  bookedAt: number | null;
+  orderedAt: number | null;
   /** 第三方平台订单详情页 URL，为 null 时不展示跳转入口 */
   orderUrl: string | null;
 }
 
-/** 拉取当前登录用户的全部订单（平铺预订记录，按下单时间倒序） */
-export async function fetchMyOrders(): Promise<MyOrderBooking[]> {
-  const res = await fetch(`${getApiBase()}/api/my-orders/bookings`, {
+/** 拉取当前登录用户的全部订单（按下单时间倒序） */
+export async function fetchMyOrders(): Promise<MyOrder[]> {
+  const res = await fetch(`${getApiBase()}/api/my-orders/orders`, {
     headers: authHeaders(),
   });
   if (res.status === 401) throw new Error('UNAUTHORIZED');
@@ -37,9 +37,9 @@ export async function fetchMyOrders(): Promise<MyOrderBooking[]> {
   return res.json();
 }
 
-/** 删除指定订单记录（逻辑删除） */
-export async function deleteBooking(bookingId: string): Promise<{ deleted: boolean }> {
-  const res = await fetch(`${getApiBase()}/api/my-orders/bookings/${bookingId}`, {
+/** 删除指定订单（逻辑删除） */
+export async function deleteOrder(orderNo: string): Promise<{ deleted: boolean }> {
+  const res = await fetch(`${getApiBase()}/api/my-orders/orders/${orderNo}`, {
     method: 'DELETE',
     headers: authHeaders(),
   });
@@ -48,12 +48,12 @@ export async function deleteBooking(bookingId: string): Promise<{ deleted: boole
   return res.json();
 }
 
-/** 取消指定订单（同步调用第三方平台取消接口 + 更新内部状态为 CANCELLED） */
-export async function cancelBooking(
-  bookingId: string,
+/** 取消指定订单（同步调用渠道取消接口 + 更新内部状态为 CANCELLED） */
+export async function cancelOrder(
+  orderNo: string,
   reason?: string,
 ): Promise<{ cancelled: boolean; message: string }> {
-  const res = await fetch(`${getApiBase()}/api/my-orders/bookings/${bookingId}/cancel`, {
+  const res = await fetch(`${getApiBase()}/api/my-orders/orders/${orderNo}/cancel`, {
     method: 'POST',
     headers: { ...authHeaders(), 'Content-Type': 'application/json' },
     body: JSON.stringify(reason ? { reason } : {}),

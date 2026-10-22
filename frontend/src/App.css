@@ -872,7 +872,7 @@ html, body {
   font-style: italic;
 }
 
-/* Plan & travel blocks inside timeline */
+/* Plan & result blocks inside timeline */
 .timeline-plan {
   margin: 2px 0;
 }
@@ -882,12 +882,12 @@ html, body {
   border-radius: 6px;
 }
 
-.timeline-travel {
+.timeline-result {
   margin: 4px 0;
 }
 
-/* ── Booking result / payment card ─────────────────────────────────────── */
-.timeline-booking {
+/* ── Order result / payment card ──────────────────────────────────────── */
+.timeline-order {
   margin: 4px 0;
 }
 
@@ -936,7 +936,7 @@ html, body {
   width: 100%;
 }
 
-.booking-card {
+.order-result-card {
   background: #fff;
   border: 1.5px solid #d6e8fb;
   border-radius: 12px;
@@ -945,7 +945,7 @@ html, body {
   max-width: 420px;
 }
 
-.booking-card-header {
+.order-result-card-header {
   display: flex;
   align-items: center;
   gap: 10px;
@@ -954,7 +954,7 @@ html, body {
   border-bottom: 1px solid #eaf1fb;
 }
 
-.booking-card-icon {
+.order-result-card-icon {
   width: 34px;
   height: 34px;
   border-radius: 9px;
@@ -966,7 +966,7 @@ html, body {
   flex-shrink: 0;
 }
 
-.booking-card-heading {
+.order-result-card-heading {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -974,13 +974,13 @@ html, body {
   min-width: 0;
 }
 
-.booking-card-type {
+.order-result-card-type {
   font-size: 13.5px;
   font-weight: 600;
   color: #1a2d3a;
 }
 
-.booking-card-title {
+.order-result-card-title {
   font-size: 12px;
   color: #6b7785;
   white-space: nowrap;
@@ -988,7 +988,7 @@ html, body {
   text-overflow: ellipsis;
 }
 
-.booking-card-status {
+.order-result-card-status {
   font-size: 11px;
   font-weight: 600;
   color: #fa8c16;
@@ -999,49 +999,49 @@ html, body {
   flex-shrink: 0;
 }
 
-.booking-card-body {
+.order-result-card-body {
   padding: 12px 14px;
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.booking-card-row {
+.order-result-card-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
 
-.booking-card-label {
+.order-result-card-label {
   font-size: 12.5px;
   color: #8c98a4;
   flex-shrink: 0;
 }
 
-.booking-card-value {
+.order-result-card-value {
   font-size: 12.5px;
   color: #1a2d3a;
   text-align: right;
   word-break: break-all;
 }
 
-.booking-card-value.order-no {
+.order-result-card-value.order-no {
   font-family: 'SF Mono', 'Menlo', monospace;
   font-size: 12px;
 }
 
-.booking-card-amount {
+.order-result-card-amount {
   font-size: 16px;
   font-weight: 700;
   color: #f5222d;
 }
 
-.booking-card-footer {
+.order-result-card-footer {
   padding: 0 14px 14px;
 }
 
-.booking-card-pay-btn {
+.order-result-card-pay-btn {
   display: block;
   width: 100%;
   text-align: center;
@@ -1056,11 +1056,11 @@ html, body {
   transition: opacity 0.15s;
 }
 
-.booking-card-pay-btn:hover {
+.order-result-card-pay-btn:hover {
   opacity: 0.9;
 }
 
-.booking-card-pay-btn.disabled {
+.order-result-card-pay-btn.disabled {
   background: #f0f0f0;
   color: #b0b0b0;
   cursor: not-allowed;
@@ -1216,7 +1216,7 @@ html, body {
   gap: 10px;
 }
 
-.processing-results-section .travel-result-card {
+.processing-results-section .result-card {
   border: 1px solid #f0f0f0;
   border-radius: 8px;
 }
@@ -2307,8 +2307,8 @@ html, body {
   margin-left: 2px;
 }
 
-/* ── Travel Result Cards ─────────────────────────────────────────────── */
-.travel-cards-wrapper {
+/* ── Agent Result Cards ──────────────────────────────────────────────── */
+.result-cards-wrapper {
   padding-left: 46px;
   max-width: 720px;
   display: flex;
@@ -2316,7 +2316,7 @@ html, body {
   gap: 12px;
 }
 
-.travel-result-card {
+.result-card {
   background: #fff;
   border: 1px solid #e8eef7;
   border-radius: 12px;
@@ -2324,7 +2324,7 @@ html, body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
-.travel-result-header {
+.result-card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2333,18 +2333,18 @@ html, body {
   border-bottom: 1px solid #e8eef7;
 }
 
-.travel-result-title {
+.result-card-title {
   font-size: 13px;
   font-weight: 600;
   color: #1a2d3a;
 }
 
-.travel-result-count {
+.result-card-count {
   font-size: 11.5px;
   color: #8c8c8c;
 }
 
-.travel-result-list {
+.result-card-list {
   display: flex;
   flex-direction: column;
   gap: 1px;
@@ -2352,24 +2352,24 @@ html, body {
 }
 
 /* ── 单项卡片通用 ── */
-.travel-item-card {
+.result-item-card {
   background: #fff;
   padding: 12px 14px;
 }
 
-.travel-price {
+.result-price {
   font-size: 16px;
   font-weight: 700;
   color: #ff4d4f;
 }
 
-.travel-price .price-unit {
+.result-price .price-unit {
   font-size: 11px;
   font-weight: 400;
   color: #999;
 }
 
-.travel-link {
+.result-link {
   font-size: 12px;
   color: #1677ff;
   text-decoration: none;
@@ -2379,265 +2379,125 @@ html, body {
   transition: all 0.15s;
 }
 
-.travel-link:hover {
+.result-link:hover {
   background: #e6f4ff;
   border-color: #1677ff;
 }
 
 /* ── 航班卡片 ── */
-.flight-card-header,
-.train-card-header {
+/* ── 商品卡片 ── */
+.product-card {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.flight-airline {
-  font-size: 13px;
-  font-weight: 600;
-  color: #1a2d3a;
-}
-
-.flight-no,
-.train-no {
-  font-size: 12px;
-  color: #595959;
-  font-family: 'SFMono-Regular', Consolas, monospace;
-}
-
-.flight-class,
-.train-class {
-  font-size: 11px;
-  color: #8c8c8c;
-  background: #f5f5f5;
-  padding: 1px 6px;
-  border-radius: 4px;
-}
-
-.flight-type-badge,
-.train-type-badge {
-  font-size: 10.5px;
-  color: #389e0d;
-  background: #f6ffed;
-  border: 1px solid #b7eb8f;
-  padding: 1px 6px;
-  border-radius: 8px;
-  margin-left: auto;
-}
-
-.flight-card-body,
-.train-card-body {
+.product-card-content {
   display: flex;
-  align-items: center;
   gap: 12px;
-  padding: 4px 0;
+  align-items: flex-start;
 }
 
-.flight-endpoint,
-.train-endpoint {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 60px;
-}
-
-.flight-time,
-.train-time {
-  font-size: 18px;
-  font-weight: 700;
-  color: #1a1a1a;
-  line-height: 1.2;
-}
-
-.flight-station,
-.train-station {
-  font-size: 12px;
-  color: #595959;
-  margin-top: 2px;
-}
-
-.flight-term {
-  font-size: 10.5px;
-  color: #8c8c8c;
-}
-
-.flight-date,
-.train-date {
-  font-size: 10.5px;
-  color: #bfbfbf;
-  margin-top: 1px;
-}
-
-.flight-middle,
-.train-middle {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-}
-
-.flight-duration,
-.train-duration {
-  font-size: 11px;
-  color: #8c8c8c;
-}
-
-.flight-line,
-.train-line {
-  position: relative;
-  width: 100%;
+.product-image {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: #f5f5f5;
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 14px;
-}
-
-.flight-line-bar,
-.train-line-bar {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 1.5px;
-  background: linear-gradient(90deg, #bae0ff, #91caff, #bae0ff);
-}
-
-.flight-plane-icon {
-  position: relative;
-  color: #1677ff;
-  transform: rotate(90deg);
-}
-
-.train-line-dot {
-  position: relative;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #1677ff;
-}
-
-.flight-cities,
-.train-cities {
-  font-size: 10.5px;
-  color: #bfbfbf;
-}
-
-.flight-card-footer,
-.train-card-footer,
-.hotel-card-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 10px;
-  padding-top: 8px;
-  border-top: 1px solid #f5f5f5;
-}
-
-/* ── 酒店卡片 ── */
-.hotel-card-content {
-  display: flex;
-  gap: 12px;
-}
-
-.hotel-image {
-  width: 80px;
-  height: 80px;
-  border-radius: 8px;
   overflow: hidden;
-  flex-shrink: 0;
 }
 
-.hotel-image img {
+.product-image img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.hotel-info {
+.product-image-emoji {
+  font-size: 30px;
+  line-height: 1;
+}
+
+.product-info {
   flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 5px;
 }
 
-.hotel-name-row {
+.product-name-row {
   display: flex;
-  align-items: center;
-  gap: 6px;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
-.hotel-name {
+.product-name {
   font-size: 14px;
   font-weight: 600;
   color: #1a1a1a;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.35;
 }
 
-.hotel-star {
-  font-size: 10.5px;
-  color: #d48806;
-  background: #fffbe6;
-  border: 1px solid #ffe58f;
-  padding: 0 5px;
+.product-brand {
+  font-size: 11px;
+  color: #8c8c8c;
+  padding: 1px 6px;
+  border: 1px solid #e8e8e8;
   border-radius: 4px;
-  flex-shrink: 0;
 }
 
-.hotel-brand {
-  font-size: 10.5px;
-  color: #531dab;
-  background: #f9f0ff;
-  border: 1px solid #d3adf7;
-  padding: 0 5px;
-  border-radius: 4px;
-  flex-shrink: 0;
+.product-category {
+  font-size: 11.5px;
+  color: #8c8c8c;
 }
 
-.hotel-score-row {
+.product-tags {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
   gap: 4px;
 }
 
-.hotel-score {
-  font-size: 12px;
-  font-weight: 700;
+.product-tag {
+  font-size: 11px;
   color: #1677ff;
   background: #e6f4ff;
-  padding: 0 5px;
+  padding: 1px 6px;
   border-radius: 4px;
 }
 
-.hotel-score-desc {
-  font-size: 11px;
-  color: #1677ff;
-}
-
-.hotel-address {
+.product-meta-row {
+  display: flex;
+  gap: 10px;
   font-size: 11.5px;
   color: #8c8c8c;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.hotel-poi {
-  font-size: 11px;
-  color: #389e0d;
+.product-rating {
+  color: #fa8c16;
 }
 
-.hotel-review {
-  font-size: 11px;
-  color: #595959;
-  font-style: italic;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.product-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 8px;
+  border-top: 1px dashed #f0f0f0;
 }
+
+.price-original {
+  font-size: 11px;
+  color: #bfbfbf;
+  text-decoration: line-through;
+  margin-left: 6px;
+  font-weight: 400;
+}
+
 
 /* ── 通用兜底卡片 ── */
 .generic-card {
@@ -2973,13 +2833,13 @@ html, body {
   background: #fff1f0;
 }
 
-/* ── 我的差旅 页面 ─────────────────────────────────────────────── */
+/* ── 我的订单 页面 ─────────────────────────────────────────────── */
 
-.travel-page .admin-list {
-  display: none; /* 走 travel-layout 双栏布局，不用默认列表 */
+.orders-page .admin-list {
+  display: none; /* 走 orders-layout 双栏布局，不用默认列表 */
 }
 
-.travel-layout {
+.orders-layout {
   display: grid;
   grid-template-columns: 320px 1fr;
   gap: 16px;
@@ -2988,7 +2848,7 @@ html, body {
   align-items: stretch;
 }
 
-.travel-list {
+.orders-list {
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -2997,7 +2857,7 @@ html, body {
   padding-right: 4px;
 }
 
-.travel-card {
+.orders-card {
   background: #fff;
   border: 1px solid #ececec;
   border-radius: 12px;
@@ -3007,35 +2867,35 @@ html, body {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
-.travel-card:hover {
+.orders-card:hover {
   border-color: #91caff;
   box-shadow: 0 2px 8px rgba(22, 119, 255, 0.08);
 }
 
-.travel-card.active {
+.orders-card.active {
   border-color: #1677ff;
   box-shadow: 0 2px 10px rgba(22, 119, 255, 0.15);
 }
 
-.travel-card-head {
+.orders-card-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
 
-.travel-card-route {
+.orders-card-route {
   font-size: 14.5px;
   font-weight: 600;
   color: #1a1a1a;
 }
 
-.travel-card-arrow {
+.orders-card-arrow {
   color: #8b949e;
   margin: 0 4px;
 }
 
-.travel-card-tag {
+.orders-card-tag {
   flex-shrink: 0;
   padding: 1px 8px;
   border-radius: 10px;
@@ -3046,13 +2906,13 @@ html, body {
   margin-left: 4px;
 }
 
-.travel-card-dates {
+.orders-card-dates {
   margin-top: 4px;
   font-size: 12.5px;
   color: #595959;
 }
 
-.travel-card-purpose {
+.orders-card-purpose {
   margin-top: 4px;
   font-size: 12.5px;
   color: #8b949e;
@@ -3061,7 +2921,7 @@ html, body {
   white-space: nowrap;
 }
 
-.travel-card-meta {
+.orders-card-meta {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -3069,7 +2929,7 @@ html, body {
   margin-top: 8px;
 }
 
-.travel-card-count {
+.orders-card-count {
   font-size: 12px;
   color: #1677ff;
   background: #e6f4ff;
@@ -3077,13 +2937,13 @@ html, body {
   padding: 1px 8px;
 }
 
-.travel-card-time {
+.orders-card-time {
   margin-top: 6px;
   font-size: 11.5px;
   color: #a0a0a0;
 }
 
-.travel-main {
+.orders-main {
   min-width: 0;
   background: #fff;
   border: 1px solid #ececec;
@@ -3094,7 +2954,7 @@ html, body {
   overflow-y: auto;
 }
 
-.travel-detail-head {
+.orders-detail-head {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -3103,7 +2963,7 @@ html, body {
   border-bottom: 1px solid #f0f0f0;
 }
 
-.travel-detail-title {
+.orders-detail-title {
   font-size: 18px;
   font-weight: 600;
   color: #1a1a1a;
@@ -3112,37 +2972,37 @@ html, body {
   gap: 6px;
 }
 
-.travel-detail-sub {
+.orders-detail-sub {
   margin-top: 4px;
   font-size: 12.5px;
   color: #8b949e;
 }
 
-.travel-detail-sep {
+.orders-detail-sep {
   margin: 0 6px;
   color: #d9d9d9;
 }
 
-.travel-detail-status {
+.orders-detail-status {
   flex-shrink: 0;
 }
 
-.travel-detail-block {
+.orders-detail-block {
   margin-top: 16px;
 }
 
-.travel-detail-label {
+.orders-detail-label {
   font-size: 12.5px;
   color: #8b949e;
   margin-bottom: 6px;
 }
 
-.travel-detail-value {
+.orders-detail-value {
   font-size: 14px;
   color: #1a1a1a;
 }
 
-.travel-detail-empty {
+.orders-detail-empty {
   padding: 12px 14px;
   background: #fafafa;
   border-radius: 8px;
@@ -3150,7 +3010,7 @@ html, body {
   font-size: 13px;
 }
 
-.travel-detail-approval {
+.orders-detail-approval {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -3162,15 +3022,15 @@ html, body {
   color: #595959;
 }
 
-.travel-detail-approval-id {
+.orders-detail-approval-id {
   color: #1a1a1a;
 }
 
-.travel-detail-approval-time {
+.orders-detail-approval-time {
   color: #8b949e;
 }
 
-.travel-detail-approval-remark {
+.orders-detail-approval-remark {
   width: 100%;
   margin-top: 4px;
   color: #595959;
@@ -3320,7 +3180,7 @@ html, body {
   color: #d48806;
 }
 
-.travel-actions {
+.orders-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
@@ -3329,7 +3189,7 @@ html, body {
   border-top: 1px solid #f0f0f0;
 }
 
-.travel-action-btn {
+.orders-action-btn {
   padding: 8px 16px;
   border: 1px solid #d9d9d9;
   border-radius: 8px;
@@ -3341,37 +3201,37 @@ html, body {
   transition: all 0.15s;
 }
 
-.travel-action-btn:hover {
+.orders-action-btn:hover {
   border-color: #1677ff;
   color: #1677ff;
   background: #f0f7ff;
 }
 
-.travel-action-btn.primary {
+.orders-action-btn.primary {
   background: #1677ff;
   color: #fff;
   border-color: #1677ff;
 }
 
-.travel-action-btn.primary:hover {
+.orders-action-btn.primary:hover {
   background: #0958d9;
   border-color: #0958d9;
   color: #fff;
 }
 
-.travel-action-btn.danger {
+.orders-action-btn.danger {
   background: #fff;
   color: #ff4d4f;
   border-color: #ff4d4f;
 }
 
-.travel-action-btn.danger:hover {
+.orders-action-btn.danger:hover {
   background: #ff4d4f;
   border-color: #ff4d4f;
   color: #fff;
 }
 
-.travel-page.admin-page {
+.orders-page.admin-page {
   display: flex;
   flex-direction: column;
 }

@@ -42,7 +42,7 @@ public class SearchResultConverter {
      */
     public JSONObject buildCandidates(String userId, String origin, String destination,
                                       String departureDate, String returnDate) {
-        logger.info("[plan_itinerary] buildCandidates 开始, userId={}, origin={}, destination={}, departureDate={}, returnDate={}",
+        logger.info("[plan_shopping] buildCandidates 开始, userId={}, origin={}, destination={}, departureDate={}, returnDate={}",
                 userId, origin, destination, departureDate, returnDate);
 
         JSONArray transportOptions = new JSONArray();
@@ -52,12 +52,12 @@ public class SearchResultConverter {
 
         // 精确查询：由 Store 根据行程规则拼接 field 名称并 HMGET
         Map<String, String> allEntries = searchCandidateStore.loadByTrip(userId, origin, destination, departureDate, returnDate);
-        logger.info("[plan_itinerary] buildCandidates: 精确查询命中 {} 条", allEntries.size());
+        logger.info("[plan_shopping] buildCandidates: 精确查询命中 {} 条", allEntries.size());
         processEntries(allEntries, transportOptions, hotelOptions, tCounter, hCounter, departureDate, returnDate);
 
-        logger.info("[plan_itinerary] buildCandidates 完成: transport_options={}, hotel_options={}", transportOptions.size(), hotelOptions.size());
+        logger.info("[plan_shopping] buildCandidates 完成: transport_options={}, hotel_options={}", transportOptions.size(), hotelOptions.size());
         if (transportOptions.isEmpty() && hotelOptions.isEmpty()) {
-            logger.info("[plan_itinerary] buildCandidates: 交通和酒店候选均为空, 返回 null");
+            logger.info("[plan_shopping] buildCandidates: 交通和酒店候选均为空, 返回 null");
             return null;
         }
 
@@ -87,7 +87,7 @@ public class SearchResultConverter {
             try {
                 entry = JSON.parseObject(value);
             } catch (Exception e) {
-                logger.warn("[plan_itinerary] 解析搜索结果失败, skip, key={}", key, e);
+                logger.warn("[plan_shopping] 解析搜索结果失败, skip, key={}", key, e);
                 continue;
             }
 
@@ -95,16 +95,16 @@ public class SearchResultConverter {
             JSONObject args = entry.getJSONObject("args");
             JSONObject data = entry.getJSONObject("data");
             if (type == null || data == null) {
-                logger.info("[plan_itinerary] buildCandidates: key={} 的 type 或 data 为空, 跳过 (type={}, data={})", key, type, data);
+                logger.info("[plan_shopping] buildCandidates: key={} 的 type 或 data 为空, 跳过 (type={}, data={})", key, type, data);
                 continue;
             }
-            logger.info("[plan_itinerary] buildCandidates: 处理 key={}, type={}", key, type);
+            logger.info("[plan_shopping] buildCandidates: 处理 key={}, type={}", key, type);
 
             switch (type) {
                 case "FLIGHT" -> convertFlights(data, args, transportOptions, tCounter);
                 case "TRAIN" -> convertTrains(data, args, transportOptions, tCounter);
                 case "HOTEL" -> convertHotels(data, args, hotelOptions, hCounter, departureDate, returnDate);
-                default -> logger.warn("[plan_itinerary] 未知搜索类型 {}", type);
+                default -> logger.warn("[plan_shopping] 未知搜索类型 {}", type);
             }
         }
     }
@@ -115,10 +115,10 @@ public class SearchResultConverter {
     private void convertFlights(JSONObject data, JSONObject args, JSONArray transportList, int[] counter) {
         JSONArray flights = data.getJSONArray("data");
         if (flights == null) {
-            logger.info("[plan_itinerary] convertFlights: data 数组为空, 跳过");
+            logger.info("[plan_shopping] convertFlights: data 数组为空, 跳过");
             return;
         }
-        logger.info("[plan_itinerary] convertFlights: 待转换机票数量={}", flights.size());
+        logger.info("[plan_shopping] convertFlights: 待转换机票数量={}", flights.size());
         String depCity = args != null ? args.getString("departureCityName") : null;
         String arrCity = args != null ? args.getString("arrivalCityName") : null;
 
@@ -151,10 +151,10 @@ public class SearchResultConverter {
     private void convertTrains(JSONObject data, JSONObject args, JSONArray transportList, int[] counter) {
         JSONArray trains = data.getJSONArray("data");
         if (trains == null) {
-            logger.info("[plan_itinerary] convertTrains: data 数组为空, 跳过");
+            logger.info("[plan_shopping] convertTrains: data 数组为空, 跳过");
             return;
         }
-        logger.info("[plan_itinerary] convertTrains: 待转换火车数量={}", trains.size());
+        logger.info("[plan_shopping] convertTrains: 待转换火车数量={}", trains.size());
         String depCity = args != null ? args.getString("departureCityName") : null;
         String arrCity = args != null ? args.getString("arrivalCityName") : null;
 
@@ -206,13 +206,13 @@ public class SearchResultConverter {
                                String departureDate, String returnDate) {
         JSONArray hotels = data.getJSONArray("hotels");
         if (hotels == null) {
-            logger.info("[plan_itinerary] convertHotels: hotels 数组为空, 跳过");
+            logger.info("[plan_shopping] convertHotels: hotels 数组为空, 跳过");
             return;
         }
-        logger.info("[plan_itinerary] convertHotels: 待转换酒店数量={}", hotels.size());
+        logger.info("[plan_shopping] convertHotels: 待转换酒店数量={}", hotels.size());
 
         int nights = computeNights(args, departureDate, returnDate);
-        logger.info("[plan_itinerary] convertHotels: 计算入住晚数={}", nights);
+        logger.info("[plan_shopping] convertHotels: 计算入住晚数={}", nights);
 
         for (int i = 0; i < hotels.size(); i++) {
             JSONObject h = hotels.getJSONObject(i);

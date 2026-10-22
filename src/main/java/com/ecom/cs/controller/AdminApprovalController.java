@@ -9,7 +9,7 @@ import com.ecom.cs.business.approval.entity.ApprovalRecordStatus;
 import com.ecom.cs.business.approval.service.ApprovalService;
 import com.ecom.cs.business.audit.service.AdminAuditService;
 import com.ecom.cs.business.auth.service.AuthService;
-import com.ecom.cs.business.order.service.TravelOrderService;
+import com.ecom.cs.business.order.service.AfterSaleTicketService;
 import com.ecom.cs.controller.request.ApprovalDecisionRequest;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -44,7 +44,7 @@ public class AdminApprovalController {
     @Autowired
     private ApprovalService approvalService;
     @Autowired
-    private TravelOrderService travelOrderService;
+    private AfterSaleTicketService ticketService;
     @Autowired
     private AdminAuditService adminAuditService;
 
@@ -81,8 +81,8 @@ public class AdminApprovalController {
                     .body(Map.of("message", "decision 只能为 agree 或 refuse"));
         }
 
-        // 审批决策 + 同步差旅单状态，由事务保证原子性
-        Optional<ApprovalRecord> updated = travelOrderService.decideAndSyncOrder(processInstanceId, agree, request.getRemark());
+        // 审批决策 + 同步售后工单状态，由事务保证原子性
+        Optional<ApprovalRecord> updated = ticketService.decideAndSyncOrder(processInstanceId, agree, request.getRemark());
         if (updated.isEmpty()) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of("message", "审批单不存在或已被处理"));
@@ -97,7 +97,7 @@ public class AdminApprovalController {
         adminAuditService.record(adminUserId, "approval_decide",
                 AdminAuditService.TARGET_APPROVAL, processInstanceId, detail);
 
-        // 审批结果不主动推送给 Agent 会话：用户通过“我的差旅”页或对话中查询审批状态获知结果
+        // 审批结果不主动推送给 Agent 会话：用户通过“我的售后”页或对话中查询审批状态获知结果
         return ResponseEntity.ok(toView(record));
     }
 

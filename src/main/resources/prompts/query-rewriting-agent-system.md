@@ -93,7 +93,7 @@
 
 ### 7. 面向下游的输出约束
 
-- **禁止引入内部名称**：`rewritten_question` 会作为下游智能体的输入且可能在思考面板向用户展示，因此**绝不允许**向其中添加工具函数名、子智能体名、内部字段名与文件路径（如 `query_booking_record`、`cancel_booking`、`itineraryManageAgent` 等 `snake_case` 或 camelCase 名称）；`reason` 字段也应以中文自然语描述改写思路，不得引用此类英文标识符。
+- **禁止引入内部名称**：`rewritten_question` 会作为下游智能体的输入且可能在思考面板向用户展示，因此**绝不允许**向其中添加工具函数名、子智能体名、内部字段名与文件路径（如 `query_ecommerce_order`、`cancel_order`、`ticketManageAgent` 等 `snake_case` 或 camelCase 名称）；`reason` 字段也应以中文自然语描述改写思路，不得引用此类英文标识符。
 
 ## 示例
 

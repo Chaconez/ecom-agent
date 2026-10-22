@@ -5,7 +5,7 @@ import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.ecom.cs.agent.context.AgentSessionContext;
 import com.ecom.cs.agent.context.SessionReactorContext;
-import com.ecom.cs.agent.tools.ItineraryPlannerTools;
+import com.ecom.cs.agent.tools.ProductShoppingTools;
 import com.ecom.cs.agent.tools.store.SearchCandidateStore;
 import io.agentscope.core.hook.Hook;
 import io.agentscope.core.hook.HookEvent;
@@ -27,7 +27,7 @@ import java.util.Map;
  *
  * <p>监听 {@link PostActingEvent}：当 {@code execute_shell_command} 执行的是 tuniu
  * <b>搜索类</b>命令（机票/火车票/酒店搜索）且返回成功时，自动将 stdout 中的原始搜索结果
- * 写入 Redis（按用户隔离），供 {@link ItineraryPlannerTools}
+ * 写入 Redis（按用户隔离），供 {@link ProductShoppingTools}
  * 在 {@code candidates="from_redis"} 模式下直接读取。</p>
  *
  * <p>识别的搜索命令：

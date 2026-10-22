@@ -2,23 +2,22 @@ import { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { PlanTaskList } from './ProgressCard';
-import TravelResultCard from './TravelResultCard';
-import BookingResultCard from './BookingResultCard';
+import AgentResultCard from './AgentResultCard';
+import OrderResultCard from './OrderResultCard';
 import type { Message, TimelineItem, PlanHtmlData } from '../types';
 import { isPersistedMessageId } from '../store/chatStore';
 
 // ── Agent display names ───────────────────────────────────────────────────
-// 注：底层 Agent 类名（Itinerary* 等）仍沿用差旅时代命名，P2 阶段将统一重命名，
-// 此处仅把用户可见的中文展示名切换为电商客服语义。
+// 键名必须与后端 Agent 的 .name(...) 严格一致，否则进度卡片会直接显示英文原名。
 const AGENT_LABELS: Record<string, string> = {
   MasterAgent: '电商客服',
   QueryRewritingAgent: '查询改写智能体',
   IntentRecognitionAgent: '意图识别智能体',
-  ItineraryPlanAgent: '方案规划智能体',
-  ItineraryManageAgent: '订单管理智能体',
-  ItineraryReviewAgent: '方案审核智能体',
-  BookingAgent: '下单执行智能体',
-  ReimbursementAgent: '售后处理智能体',
+  ProductShoppingAgent: '商品导购智能体',
+  TicketManageAgent: '工单管理智能体',
+  TicketReviewAgent: '工单审核智能体',
+  OrderAgent: '订单管理智能体',
+  ReimbursementAgent: '售后服务智能体',
   InfoAgent: '信息查询智能体',
 };
 
@@ -45,9 +44,6 @@ type ToolItem = Extract<TimelineItem, { kind: 'tool' }>;
 type TimelineUnit =
   | { type: 'tool-group'; items: ToolItem[] }
   | { type: 'single'; item: TimelineItem; idx: number };
-
-/** 前端仅展示这几类搜索结果卡片，其余（如未知类型）不渲染 */
-const TRAVEL_ALLOWED = new Set(['flight', 'hotel', 'train']);
 
 /** 将连续且标题相同的工具调用合并为一组，其余条目原样保留 */
 function buildTimelineUnits(timeline: TimelineItem[]): TimelineUnit[] {
@@ -418,18 +414,17 @@ export default function AgentMessageBlock({ msg, liveTimeline = [], isStreaming,
                 if (item.kind === 'plan') {
                   return <PlanBlock key={`plan-${idx}`} tasks={item.tasks} />;
                 }
-                if (item.kind === 'travel') {
-                  if (!TRAVEL_ALLOWED.has(item.data.type)) return null;
+                if (item.kind === 'result') {
                   return (
-                    <div key={`travel-${idx}`} className="timeline-travel">
-                      <TravelResultCard data={item.data} />
+                    <div key={`result-${idx}`} className="timeline-result">
+                      <AgentResultCard data={item.data} />
                     </div>
                   );
                 }
-                if (item.kind === 'booking') {
+                if (item.kind === 'order') {
                   return (
-                    <div key={`booking-${idx}`} className="timeline-booking">
-                      <BookingResultCard data={item.data} />
+                    <div key={`order-${idx}`} className="timeline-order">
+                      <OrderResultCard data={item.data} />
                     </div>
                   );
                 }

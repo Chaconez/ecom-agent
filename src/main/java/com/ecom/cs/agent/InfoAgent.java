@@ -34,13 +34,13 @@ public class InfoAgent extends BaseSubAgent {
     @Qualifier("attractionKnowledge")
     protected Knowledge attractionKnowledge;
     /**
-     * 差旅政策 RAG 知识库，
+     * 售后政策 RAG 知识库，
      */
     @Autowired
     @Qualifier("corporateTravelPolicyKnowledge")
     protected Knowledge corporateTravelPolicyKnowledge;
     /**
-     * 差旅指南 RAG 知识库，
+     * 售后指南 RAG 知识库，
      */
     @Autowired
     @Qualifier("corporateTravelGuidelinesKnowledge")

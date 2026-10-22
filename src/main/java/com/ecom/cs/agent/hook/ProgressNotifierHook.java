@@ -3,7 +3,7 @@ package com.ecom.cs.agent.hook;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
-import com.ecom.cs.agent.common.TravelDataNormalizer;
+import com.ecom.cs.agent.common.AgentDataNormalizer;
 import com.ecom.cs.agent.context.AgentSessionContext;
 import com.ecom.cs.agent.context.SessionReactorContext;
 import com.ecom.cs.agent.registry.SseEmitterRegistry;
@@ -37,7 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *   <li>{@code progress}    —— agent 启停 / 工具调用进度</li>
  *   <li>{@code thinking}    —— agent 推理增量文本；分析类 Agent 的最终格式化结果</li>
  *   <li>{@code plan_update} —— PlanNotebook 任务列表变化（由外部调用 {@link #sendPlanUpdate}）</li>
- *   <li>{@code travel_data} —— 从工具结果中识别到的酒店 / 机票 / 火车票等可展示数据</li>
+ *   <li>{@code result_data} —— 从工具结果中识别到的商品 / 服务等可展示数据</li>
  * </ul>
  *
  * @author Hollis
@@ -53,9 +53,9 @@ public class ProgressNotifierHook implements Hook {
             "MasterAgent", "智能中枢",
             "QueryRewritingAgent", "查询改写",
             "IntentRecognitionAgent", "意图识别",
-            "ItineraryPlanAgent", "行程规划",
-            "ItineraryReviewAgent", "行程审核",
-            "ItineraryManageAgent", "行程管理",
+            "ProductShoppingAgent", "行程规划",
+            "TicketReviewAgent", "行程审核",
+            "TicketManageAgent", "行程管理",
             "ReimbursementAgent", "报销处理",
             "InfoAgent", "信息查询"
     );
@@ -65,7 +65,7 @@ public class ProgressNotifierHook implements Hook {
 
     /** 子 Agent 代理工具：其自身会产生独立进度，此处不再作为工具条目上报 */
     private static final Set<String> AGENT_TOOLS = Set.of(
-            "itinerary_manage_agent", "info_agent", "itinerary_plan_agent", "booking_agent"
+            "ticket_manage_agent", "info_agent", "product_shopping_agent", "order_agent"
     );
 
     /** PlanNotebook 内部工具：其状态已通过 plan_update 呈现，避免和工具条目重复展示 */
@@ -80,24 +80,24 @@ public class ProgressNotifierHook implements Hook {
 
     /** 工具名 → 中文标签 */
     private static final Map<String, String> TOOL_LABELS = Map.ofEntries(
-            // 差旅政策
-            Map.entry("check_travel_policy", "核对差旅政策"),
-            Map.entry("query_travel_policy", "查询差旅政策"),
-            // 差旅申请 / 审批
-            Map.entry("query_travel_order", "查询差旅申请"),
-            Map.entry("query_travel_orders", "查询差旅单列表"),
-            Map.entry("query_travel_order_by_order_id", "查询差旅单详情"),
-            Map.entry("modify_travel_order", "修改出差申请"),
-            Map.entry("cancel_travel_order", "取消出差申请"),
-            Map.entry("submit_travel_approval", "提交审批申请"),
+            // 售后政策
+            Map.entry("check_after_sale_policy", "核对售后政策"),
+            Map.entry("query_after_sale_policy", "查询售后政策"),
+            // 售后工单 / 审批
+            Map.entry("query_after_sale_ticket", "查询售后工单"),
+            Map.entry("query_after_sale_tickets", "查询售后工单列表"),
+            Map.entry("query_after_sale_ticket_by_order_id", "查询售后工单详情"),
+            Map.entry("modify_after_sale_ticket", "修改售后工单"),
+            Map.entry("cancel_after_sale_ticket", "取消售后工单"),
+            Map.entry("submit_after_sale_ticket", "提交审批申请"),
             Map.entry("query_approval_status", "查询审批进度"),
-            Map.entry("check_travel_order_conflicts", "检查行程冲突"),
-            Map.entry("check_travel_time_validity", "检查行程时间有效性"),
-            Map.entry("check_travel_order_approval", "检查审批状态"),
+            Map.entry("check_after_sale_ticket_conflicts", "检查行程冲突"),
+            Map.entry("check_time_validity", "检查行程时间有效性"),
+            Map.entry("check_after_sale_ticket_approval", "检查审批状态"),
             // 预订
-            Map.entry("query_booking_record", "查询预订记录"),
-            Map.entry("cancel_booking", "取消预订"),
-            Map.entry("clone_itinerary", "克隆历史行程"),
+            Map.entry("query_ecommerce_order", "查询预订记录"),
+            Map.entry("cancel_order", "取消预订"),
+            Map.entry("clone_shopping_plan", "克隆历史行程"),
             // 路由 / 长期记忆
             Map.entry("retrieveFromMemory", "回忆您的偏好"),
             Map.entry("recordToMemory", "记住您的偏好"),
@@ -108,7 +108,7 @@ public class ProgressNotifierHook implements Hook {
             Map.entry("update_user_contact_info", "更新联系人信息"),
             // 行程
             Map.entry("review_planner_result", "审核出行方案"),
-            Map.entry("review_itinerary", "多维审核出行方案"),
+            Map.entry("review_ticket", "多维审核出行方案"),
             Map.entry("get_candidates", "查询行程候选数据"),
             Map.entry("get_proposals", "查询规划方案"),
             // 目的地信息
@@ -136,7 +136,7 @@ public class ProgressNotifierHook implements Hook {
             Map.entry("execute_shell_command", "执行查询操作"),
             Map.entry("write_text_file", "保存文件"),
             Map.entry("save_plan_html ", "保存方案"),
-            Map.entry("plan_itinerary", "规划往返行程")
+            Map.entry("plan_shopping", "规划往返行程")
     );
 
     /** Skill ID → 中文标签（用于 load_skill_through_path 工具的参数解析） */
@@ -156,18 +156,25 @@ public class ProgressNotifierHook implements Hook {
             Map.entry("flyai", "智能机票助手")
     );
 
-    /** 意图 ID → 中文（用于 IntentRecognitionAgent 结果格式化） */
+    /**
+     * 意图 code → 中文短标签（用于 IntentRecognitionAgent 结果格式化）。
+     * <p>键必须与 {@link com.ecom.cs.agent.intent.IntentCategory} 的 code 严格一致，
+     * 由 {@code IntentLabelSyncTest} 做一致性护栏。</p>
+     */
     private static final Map<String, String> INTENT_LABELS = Map.ofEntries(
-            Map.entry("itinerary_planning", "行程规划"),
-            Map.entry("flight_booking", "机票预订"),
-            Map.entry("hotel_booking", "酒店预订"),
-            Map.entry("train_booking", "高铁预订"),
-            Map.entry("reimbursement", "报销处理"),
-            Map.entry("travel_order_query", "订单查询"),
-            Map.entry("approval", "审批申请"),
-            Map.entry("info_query", "信息查询"),
-            Map.entry("cancel_order", "取消订单"),
-            Map.entry("modify_order", "修改订单")
+            Map.entry("order_query", "订单查询"),
+            Map.entry("order_cancel", "取消订单"),
+            Map.entry("order_create", "下单购买"),
+            Map.entry("ticket_submit", "提交工单"),
+            Map.entry("ticket_query", "工单查询"),
+            Map.entry("ticket_cancel", "撤回工单"),
+            Map.entry("ticket_modify", "修改工单"),
+            Map.entry("after_sale", "售后处理"),
+            Map.entry("product_consult", "商品咨询"),
+            Map.entry("general_info", "信息查询"),
+            Map.entry("greeting", "打招呼"),
+            Map.entry("transfer_human", "转人工"),
+            Map.entry("unknown", "未知意图")
     );
 
     /** 置信度 → 中文 */
@@ -177,13 +184,13 @@ public class ProgressNotifierHook implements Hook {
     private static final int RESULT_TEXT_MAX_LENGTH = 800;
     /** 工具入参 JSON 推送上限（字符数），超出截断 */
     private static final int ARGUMENTS_TEXT_MAX_LENGTH = 500;
-    /** travel_data 事件每次最多展示的条目数 */
-    private static final int TRAVEL_DATA_MAX_ITEMS = 5;
+    /** result_data 事件每次最多展示的条目数 */
+    private static final int RESULT_DATA_MAX_ITEMS = 5;
 
     // ============ 依赖与运行时状态 ============
 
     private final SseEmitterRegistry emitterRegistry;
-    private final TravelDataNormalizer travelDataNormalizer = new TravelDataNormalizer();
+    private final AgentDataNormalizer dataNormalizer = new AgentDataNormalizer();
 
     /**
      * Agent Id → sessionId 缓存。
@@ -304,8 +311,8 @@ public class ProgressNotifierHook implements Hook {
         ToolResultBlock toolResult = event.getToolResult();
         String resultText = extractToolResultText(toolResult, RESULT_TEXT_MAX_LENGTH);
         sendProgress(emitter, buildToolEvent("tool_done", agentName, toolUse, resultText));
-        // 尝试从工具结果中识别酒店/机票/火车票等可展示数据，另行推送 travel_data
-        tryEmitTravelData(emitter, toolResult, toolUse.getName());
+        // 尝试从工具结果中识别商品/服务等可展示数据，另行推送 result_data
+        tryEmitResultData(emitter, toolResult, toolUse.getName());
     }
 
     private void onPostCall(SseEmitter emitter, String sessionId, String agentName, PostCallEvent event) {
@@ -652,7 +659,7 @@ public class ProgressNotifierHook implements Hook {
      * <pre>
      * {
      *   "type": "plan_update",
-     *   "agentName": "ItineraryPlanAgent",
+     *   "agentName": "ProductShoppingAgent",
      *   "planName": "行程规划",
      *   "tasks": [
      *     { "idx": 0, "name": "搜索航班", "state": "done" },
@@ -673,7 +680,7 @@ public class ProgressNotifierHook implements Hook {
 
         Map<String, Object> data = new HashMap<>();
         data.put("type", "plan_update");
-        data.put("agentName", "ItineraryPlanAgent");
+        data.put("agentName", "ProductShoppingAgent");
         List<SubTask> subtasks = plan != null ? plan.getSubtasks() : null;
         if (plan != null) {
             data.put("planName", plan.getName() != null ? plan.getName() : "");
@@ -727,11 +734,11 @@ public class ProgressNotifierHook implements Hook {
     // ============ 旅行搜索结果识别与推送 ============
 
     /**
-     * 尝试从工具执行结果中识别酒店 / 机票 / 火车票等搜索结果，通过 {@link TravelDataNormalizer}
-     * 统一归一化为 {@code {type, items}} 格式，并向前端推送 {@code travel_data} 事件以卡片形式展示。
+     * 尝试从工具执行结果中识别商品 / 服务等搜索结果，通过 {@link AgentDataNormalizer}
+     * 统一归一化为 {@code {type, items}} 格式，并向前端推送 {@code result_data} 事件以卡片形式展示。
      * <p>已兼容：flyai、rolling-go-hotel、tuniu-cli、flight-manager 等技能输出。
      */
-    private void tryEmitTravelData(SseEmitter emitter, ToolResultBlock toolResult, String toolName) {
+    private void tryEmitResultData(SseEmitter emitter, ToolResultBlock toolResult, String toolName) {
         if (toolResult == null || toolResult.getOutput() == null) {
             return;
         }
@@ -741,25 +748,25 @@ public class ProgressNotifierHook implements Hook {
         }
 
         try {
-            JSONObject payload = travelDataNormalizer.normalize(fullText);
+            JSONObject payload = dataNormalizer.normalize(fullText);
             if (payload == null || payload.isEmpty()) {
                 logger.info("[TRAVEL_DATA] tool={} 未识别为可展示旅行数据，原始文本长度={}",
                         toolName, fullText.length());
                 return;
             }
 
-            // 最多只展示前 TRAVEL_DATA_MAX_ITEMS 条，避免卡片过长
+            // 最多只展示前 RESULT_DATA_MAX_ITEMS 条，避免卡片过长
             JSONArray items = payload.getJSONArray("items");
-            if (items != null && items.size() > TRAVEL_DATA_MAX_ITEMS) {
+            if (items != null && items.size() > RESULT_DATA_MAX_ITEMS) {
                 JSONArray trimmed = new JSONArray();
-                for (int i = 0; i < TRAVEL_DATA_MAX_ITEMS; i++) {
+                for (int i = 0; i < RESULT_DATA_MAX_ITEMS; i++) {
                     trimmed.add(items.get(i));
                 }
                 payload.put("items", trimmed);
             }
 
             // 卡片里可能有联系人电话、证件号等敏感字段，走统一脱敏出口
-            sendRawEvent(emitter, "travel_data", payload);
+            sendRawEvent(emitter, "result_data", payload);
             logger.info("[TRAVEL_DATA] tool={} 已推送 {} 条 {} 搜索结果",
                     toolName, payload.getJSONArray("items").size(), payload.getString("type"));
         } catch (IllegalStateException e) {

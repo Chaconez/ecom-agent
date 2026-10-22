@@ -6,24 +6,24 @@ import type { PlanProgress, PlanStep, PlanTask } from '../types';
 /** 一级流水线 Agent，按展示顺序排列 */
 const PIPELINE_AGENTS = ['QueryRewritingAgent', 'IntentRecognitionAgent', 'MasterAgent'];
 
-/** 由 MasterAgent 调用的二级子智能体 */
+/** 由 MasterAgent 调用的二级子智能体（与后端注册的 subAgent 名一致） */
 const SUB_AGENT_SET = new Set([
-  'ItineraryPlanAgent', 'ItineraryManageAgent', 'BookingAgent', 'ReimbursementAgent', 'InfoAgent',
+  'TicketManageAgent', 'OrderAgent', 'ReimbursementAgent', 'InfoAgent', 'ProductShoppingAgent',
 ]);
 
-/** 由 ItineraryPlanAgent 调用的三级子智能体 */
-const PLAN_SUB_AGENT_SET = new Set(['ItineraryReviewAgent']);
+/** 三级子智能体（由规划型智能体调用；当前暂无挂载，保留判断以兼容后续扩展） */
+const PLAN_SUB_AGENT_SET = new Set<string>(['TicketReviewAgent']);
 
 const AGENT_LABELS: Record<string, string> = {
-  MasterAgent:            '电商客服',
-  QueryRewritingAgent:    '问题改写智能体',
+  MasterAgent:           '电商客服',
+  QueryRewritingAgent:   '问题改写智能体',
   IntentRecognitionAgent: '意图识别智能体',
-  ItineraryPlanAgent:     '方案规划智能体',
-  ItineraryReviewAgent:   '方案审核智能体',
-  ItineraryManageAgent:  '订单管理智能体',
-  BookingAgent:           '下单执行智能体',
-  ReimbursementAgent:     '售后处理智能体',
-  InfoAgent:              '信息查询智能体',
+  ProductShoppingAgent:  '商品导购智能体',
+  TicketReviewAgent:     '工单审核智能体',
+  TicketManageAgent:     '工单管理智能体',
+  OrderAgent:            '订单管理智能体',
+  ReimbursementAgent:    '售后服务智能体',
+  InfoAgent:             '信息查询智能体',
 };
 
 function agentLabel(name: string) {
@@ -38,7 +38,7 @@ type MasterChild =
   | { kind: 'subagent'; name: string; agentStep: PlanStep };
 
 // ── PlanTaskList ────────────────────────────────────────────────────────────
-// ItineraryPlanAgent plan-and-execute 规划的子任务列表
+// 规划型智能体（plan-and-execute）拆解的子任务列表
 
 const TASK_STATE_LABELS: Record<string, string> = {
   todo: '待处理',
@@ -277,8 +277,8 @@ function MasterAgentGroup({
                 agentStep={child.agentStep}
                 tools={toolsByAgent[child.name] ?? []}
                 thoughts={thinkingByAgent[child.name] ?? []}
-                planTasks={child.name === 'ItineraryPlanAgent' ? planTasks : []}
-                subAgents={child.name === 'ItineraryPlanAgent' ? planSubAgents : []}
+                planTasks={child.name === 'ProductShoppingAgent' ? planTasks : []}
+                subAgents={child.name === 'ProductShoppingAgent' ? planSubAgents : []}
                 allToolsByAgent={toolsByAgent}
                 allThinkingByAgent={thinkingByAgent}
                 isSub
@@ -329,7 +329,7 @@ export default function ProgressCard({
     }
   });
 
-  // 构建 ItineraryPlanAgent 下的三级子智能体列表
+  // 构建规划型智能体下的三级子智能体列表
   const planSubAgents: { name: string; agentStep: PlanStep }[] = [];
   steps.forEach((step) => {
     if (step.id.startsWith('agent_')) {
@@ -424,8 +424,8 @@ export default function ProgressCard({
                 agentStep={agentStep}
                 tools={toolsByAgent[name] ?? []}
                 thoughts={thinkingByAgent[name] ?? []}
-                planTasks={name === 'ItineraryPlanAgent' ? planTasks : []}
-                subAgents={name === 'ItineraryPlanAgent' ? planSubAgents : []}
+                planTasks={name === 'ProductShoppingAgent' ? planTasks : []}
+                subAgents={name === 'ProductShoppingAgent' ? planSubAgents : []}
                 allToolsByAgent={toolsByAgent}
                 allThinkingByAgent={thinkingByAgent}
               />

@@ -43,7 +43,7 @@ public class IntentRecognitionRouter {
     /**
      * L0 结构启发使用的并列/顺承连词，复用 {@link IntentRuleMatcher#STRONG_CONJUNCTIONS}
      * （同一张表也用于 L1 的子句切分，只在一处维护）。刻意不含"和/跟/再/还要"等泛化词
-     * （那些只做子句切分信号，交给 L1 守卫处理），避免把"顺便问一下差旅政策"这类
+     * （那些只做子句切分信号，交给 L1 守卫处理），避免把"顺便问一下售后政策"这类
      * 单意图句也误伤到 L3 慢路径。
      */
     private static final Pattern MULTI_INTENT_CONJUNCTION =

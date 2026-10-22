@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 差旅对话意图识别 Agent（三层：L1 规则 → L2 向量 → L3 LLM）。
+ * 售后对话意图识别 Agent（三层：L1 规则 → L2 向量 → L3 LLM）。
  *
  * <p>本类同时承担「工厂配置」与「Agent 实现」两个角色（原先拆分为
  * {@code IntentRecognitionAgent} 配置类 + {@code IntentRecognizer} 实现类，现已合并）：
@@ -60,7 +60,7 @@ public class IntentRecognitionAgent extends AgentBase {
             AgentExecutionLoggerHook executionLoggerHook,
             ProgressNotifierHook progressNotifierHook,
             ActiveAgentPersistenceHook activeAgentPersistenceHook) {
-        super(NAME, "差旅对话意图识别与路由决策（L1/L2/L3 三层）", true,
+        super(NAME, "电商对话意图识别与路由决策（L1/L2/L3 三层）", true,
                 List.of(executionLoggerHook, progressNotifierHook, activeAgentPersistenceHook));
         this.stableModel = stableModel;
         this.router = router;

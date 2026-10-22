@@ -52,7 +52,7 @@ logging:
     com.ecom.cs: INFO # 需要排查问题时改为DEBUG，我们打了很多DEBUG日志用于观察agent运行情况
     io.agentscope.core: INFO
 
-travel:
+ecom:
   skill:
     path: classpath:skills
 
@@ -74,7 +74,7 @@ app:
     # 天气 MCP Streamable HTTP 端点（阿里云云市场网关地址，含 AppCode 鉴权）
     endpoint: ${WEATHER_MCP_ENDPOINT:http://mcpservergateway.market.alicloudapi.com/mcpnacos/cmapi00074002/xxxxxxxxx}  # 记得改成你自己的
     # 天气 MCP 工具白名单（逗号分隔的工具名称）
-    # 当前选定 6 个差旅核心工具（省略 POI/经纬度类、长期预报、生活指数等）：
+    # 当前选定 6 个售后核心工具（省略 POI/经纬度类、长期预报、生活指数等）：
     enabled-tools: 城市天气实况,城市15日预报,城市天气预警,城市空气实况,城市24小时预报,城市40日预报
 
   # Orizn Visa MCP：通过 stdio 方式启动 npx -y orizn-visa-mcp 进程

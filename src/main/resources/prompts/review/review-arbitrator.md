@@ -85,7 +85,7 @@
 
 ## next_action 决策规则
 
-- `fix_and_replan`：存在 fail 级别问题，Plan Agent 必须修复后重新调用 plan_itinerary
+- `fix_and_replan`：存在 fail 级别问题，Plan Agent 必须修复后重新调用 plan_shopping
 - `confirm_proceed`：整体为 pass 或仅有轻微 warning，可直接推进
 - `manual_review`：存在矛盾信息或不确定情况，需人工介入
 

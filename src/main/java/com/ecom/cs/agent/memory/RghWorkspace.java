@@ -46,7 +46,7 @@ public class RghWorkspace {
     private static final Set<PosixFilePermission> DIR_PERMS = PosixFilePermissions.fromString("rwx------");
     private static final Set<PosixFilePermission> FILE_PERMS = PosixFilePermissions.fromString("rw-------");
 
-    @Value("${travel.rgh.workspace:/tmp/ecom-agent/rgh-users}")
+    @Value("${ecom.rgh.workspace:/tmp/ecom-agent/rgh-users}")
     private String basePath;
 
     /** 工作区根目录，供清理任务遍历。 */

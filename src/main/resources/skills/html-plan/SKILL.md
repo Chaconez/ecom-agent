@@ -1,15 +1,15 @@
 ---
 name: html-plan
-description: 将差旅方案推荐结果组合为带内联 CSS 的美观 HTML 页面，通过 save_plan_html 工具推送至前端渲染。用于 ItineraryPlanAgent 完成方案规划和审核后，将方案以结构化 HTML 展示给用户。
+description: 将差旅方案推荐结果组合为带内联 CSS 的美观 HTML 页面，通过 save_plan_html 工具推送至前端渲染。用于 ProductShoppingAgent 完成方案规划和审核后，将方案以结构化 HTML 展示给用户。
 ---
 
 # 差旅行程方案 → HTML 渲染
 
 ## 触发条件
 
-当你（ItineraryPlanAgent）已完成以下步骤：
-1. 调用 `plan_itinerary` 生成多套方案
-2. 调用 `review_itinerary` 完成审核（含修复轮次）
+当你（ProductShoppingAgent）已完成以下步骤：
+1. 调用 `plan_shopping` 生成多套方案
+2. 调用 `review_ticket` 完成审核（含修复轮次）
 3. 调用 `finish_subtask` 标记最后子任务完成
 4. 调用 `finish_plan` 标记计划完成
 
@@ -70,7 +70,7 @@ description: 将差旅方案推荐结果组合为带内联 CSS 的美观 HTML �
 
 ### 数据要求
 
-- **禁止编造方案字段（重要）**：初稿/修复版/最终推荐里的航班号/车次号、承运人、出发/到达时间、舱位/席别、票价、酒店名、房型、晚数、每晚价、总价、总耗时、各维度评分，**必须逐字取自真实数据源**——`plan_itinerary` 的返回（含从 Redis 读取的候选数据）和审核报告；不得自行编造或改写任何数值，数据源中不存在的字段一律留空不写，不得脑补。
+- **禁止编造方案字段（重要）**：初稿/修复版/最终推荐里的航班号/车次号、承运人、出发/到达时间、舱位/席别、票价、酒店名、房型、晚数、每晚价、总价、总耗时、各维度评分，**必须逐字取自真实数据源**——`plan_shopping` 的返回（含从 Redis 读取的候选数据）和审核报告；不得自行编造或改写任何数值，数据源中不存在的字段一律留空不写，不得脑补。
 - **严禁编造用户偏好（重要）**：只有当 `preferences` 确系来自 `retrieve_from_memory` 且非空、且 planner 返回的 `preference_basis` 明确列出了命中项（如「航司命中:CA」「直飞命中」「可退命中」）时，才可以在文案中描述"方案匹配了您的偏好（某航司/时段/直飞/可退等）"，且只能描述 `preference_basis` 里真实列出的命中项。若 `preferences` 为空字符串 `""`（无长期记忆偏好），或 `preference_basis` 为「无偏好设置，使用中性分」，则**绝对禁止**声称方案匹配了航司、早班机、直飞、可退改、酒店品牌等任何用户未表达的偏好；此时偏好维度一律如实表述为"无个人偏好，按中性分计算"，且不得出现"最符合偏好"标签。
 
 ### 格式要求
@@ -82,7 +82,7 @@ description: 将差旅方案推荐结果组合为带内联 CSS 的美观 HTML �
 - **评估足迹（最末必填）**：量化本次工作量——① 出发地与目的地天气和资讯查询结果摘要；② 各类候选数量（机票/火车票分去程返程、酒店，取自 `candidates`）；③ 工具组合方案总数（`combo_count`）；④ 四类代表方案分别对应哪套（🥇综合最优 / 💰价格最低 / ⏱️时间最短 / ❤️最符合偏好，取自 `tags`）；⑤ 审核剔除/修复情况（`summary` 的未通过/有隐患数量 + 修复轮次）。
 - 表格与明细的评分列统一用 时间/价格/偏好/体验/政策/综合 六维数值。
 - 候选池完整表格为**可选附录**，仅当用户要求核对候选时，于评估足迹之后附上：交通逐条列航班号/车次号、站点、时间、舱位/席别、价格；酒店逐条列名称、品牌、星级、房型、每晚价、评分、位置/商圈。
-- **禁止向用户暴露内部名称**：最终 HTML 中**绝不允许**出现工具函数名、子智能体名、内部字段名与文件路径（如 `plan_itinerary`、`review_planner_result`、`query_destination_news`、`query_weather`、`query_travel_policy`、`retrieve_from_memory`、`record_to_memory`、`itinerary_review_agent`、`candidates`、`preference_basis`、`combo_count`、`total_transit_hhmm`、`total_budget`、`result_file` 等 `snake_case` 名称）；如需描述数据来源或处理环节，统一使用中文自然语（如"候选搜索""审核报告""目的地新闻查询""长期记忆召回""总时长""总预算""方案总数"）。若审核报告回传的 issues/suggestions 包含此类名称，透传前必须改写为中文描述。
+- **禁止向用户暴露内部名称**：最终 HTML 中**绝不允许**出现工具函数名、子智能体名、内部字段名与文件路径（如 `plan_shopping`、`review_planner_result`、`query_destination_news`、`query_weather`、`query_after_sale_policy`、`retrieve_from_memory`、`record_to_memory`、`ticket_review_agent`、`candidates`、`preference_basis`、`combo_count`、`total_transit_hhmm`、`total_budget`、`result_file` 等 `snake_case` 名称）；如需描述数据来源或处理环节，统一使用中文自然语（如"候选搜索""审核报告""目的地新闻查询""长期记忆召回""总时长""总预算""方案总数"）。若审核报告回传的 issues/suggestions 包含此类名称，透传前必须改写为中文描述。
 
 ## HTML 组件映射
 
@@ -124,7 +124,7 @@ description: 将差旅方案推荐结果组合为带内联 CSS 的美观 HTML �
 
 ### Step 1：组装方案数据（执行者：LLM）
 
-从 `plan_itinerary` 返回结果和 `review_itinerary` 审核报告中提取以下数据：
+从 `plan_shopping` 返回结果和 `review_ticket` 审核报告中提取以下数据：
 - 用户请求（出发地、目的地、去程/返程日期、事由）
 - 推荐方案（去程/返程交通详情、酒店详情、费用明细、六维评分）
 - 全部方案对比数据（标签、交通、酒店、总耗时、总价、评分、审核状态）
@@ -177,7 +177,7 @@ save_plan_html(html="<完整 HTML 字符串>", title="上海 → 杭州 差旅�
 - [ ] 未通过方案使用红色背景 `.failed`
 - [ ] 表格保留表头且表体对齐
 - [ ] 移动端有横向滚动或单列布局
-- [ ] 方案数据全部取自 `plan_itinerary` 和 `review_itinerary` 的真实返回，不得编造
+- [ ] 方案数据全部取自 `plan_shopping` 和 `review_ticket` 的真实返回，不得编造
 - [ ] 未编造用户偏好——偏好描述仅基于 `preference_basis` 命中项
 - [ ] HTML 中无内部工具名/字段名等 `snake_case` 名称暴露
 - [ ] 已调用 `save_plan_html` 工具提交 HTML
@@ -188,5 +188,5 @@ save_plan_html(html="<完整 HTML 字符串>", title="上海 → 杭州 差旅�
 - 不要删除方案中的任何方案或费用信息。
 - 不要修改价格、航班号、酒店名等事实数据。
 - 不要编造未提供的天气、政策、审核结论内容。
-- 不要在 HTML 中暴露内部工具名、字段名（如 `plan_itinerary`、`combo_count`、`total_budget` 等 snake_case 名称）。
+- 不要在 HTML 中暴露内部工具名、字段名（如 `plan_shopping`、`combo_count`、`total_budget` 等 snake_case 名称）。
 - 不要在调用 `save_plan_html` 后再输出方案 Markdown 正文——方案已通过 HTML 展示。

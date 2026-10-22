@@ -22,7 +22,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
 /**
- * 出差目的地实时联网查询工具集：天气查询 + 目的地资讯查询。
+ * 售后目的地实时联网查询工具集：天气查询 + 目的地资讯查询。
  *
  * <p><b>工具列表：</b>
  * <ul>
@@ -250,7 +250,7 @@ public class DestinationLiveTools {
     // ──────────────────────────────────────────────────────────────────────────
 
     @Tool(name = "query_destination_news",
-          description = "联网查询出差目的地的最新资讯，辅助出行规划与风险评估。\n"
+          description = "联网查询售后目的地的最新资讯，辅助出行规划与风险评估。\n"
                   + "可查询主题（topic 参数）：\n"
                   + "- traffic：交通管制、道路封閉、限行限号\n"
                   + "- event：重大展会、会议、赛事、演艺\n"

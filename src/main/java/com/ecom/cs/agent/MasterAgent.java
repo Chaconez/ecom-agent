@@ -8,7 +8,7 @@ import com.ecom.cs.agent.hook.AgentExecutionLoggerHook;
 import com.ecom.cs.agent.hook.ProgressNotifierHook;
 import com.ecom.cs.agent.hook.SessionPersistenceHook;
 import com.ecom.cs.agent.memory.AgentMemoryFactory;
-import com.ecom.cs.agent.memory.TravelPreferenceLongTermMemoryFactory;
+import com.ecom.cs.agent.memory.UserPreferenceLongTermMemoryFactory;
 import com.ecom.cs.agent.tools.UserInteractionTools;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.hook.PendingToolRecoveryHook;
@@ -61,7 +61,7 @@ public class MasterAgent {
     @Autowired
     private ActiveAgentPersistenceHook activeAgentPersistenceHook;
     @Autowired
-    private TravelPreferenceLongTermMemoryFactory memoryFactory;
+    private UserPreferenceLongTermMemoryFactory memoryFactory;
 
     @Bean(name = "masterAgent")
     @Scope("prototype")
@@ -81,12 +81,12 @@ public class MasterAgent {
         toolkit.registration().tool(new UserInteractionTools()).apply();
 
         Supplier<ReActAgent> manageAgentProvider = AgentSessionContextHolder.bind(
-                () -> context.getBean("itineraryManageAgent", ReActAgent.class));
+                () -> context.getBean("ticketManageAgent", ReActAgent.class));
 
         toolkit.registration()
                 .subAgent((SubAgentProvider<ReActAgent>) manageAgentProvider::get,
                         SubAgentConfig.builder()
-                                .toolName("itinerary_manage_agent")
+                                .toolName("ticket_manage_agent")
                                 .description("服务工单管理：收集信息、提交服务工单、查询工单/处理进度、撤回工单、修改工单。参数：message（任务描述），可选 session_id（继续会话）。")
                                 .forwardEvents(false)
                                 .build())
@@ -103,21 +103,21 @@ public class MasterAgent {
                                 .build())
                 .apply();
 
-        Supplier<ReActAgent> bookingAgentProvider = AgentSessionContextHolder.bind(
-                () -> context.getBean("bookingAgent", ReActAgent.class));
+        Supplier<ReActAgent> orderAgentProvider = AgentSessionContextHolder.bind(
+                () -> context.getBean("orderAgent", ReActAgent.class));
         toolkit.registration()
-                .subAgent((SubAgentProvider<ReActAgent>) bookingAgentProvider::get,
+                .subAgent((SubAgentProvider<ReActAgent>) orderAgentProvider::get,
                         SubAgentConfig.builder()
-                                .toolName("booking_agent")
+                                .toolName("order_agent")
                                 .description("订单管理服务：查询订单状态/物流进度/历史订单、取消订单、确认购买意向后执行下单。参数：message（任务描述，含用户要查询/取消/购买的订单或商品），可选 session_id（继续会话）。")
                                 .forwardEvents(false)
                                 .build())
                 .apply();
 
-        // 注 1：itineraryPlanAgent（行程规划）暂不注册给 MasterAgent——
+        // 注 1：productShoppingAgent（商品选购）暂不注册给 MasterAgent——
         // 电商客服场景下无对应业务路由，P3 商品搜索/选购方案模块上线后重新接入。
         // 注 2：reimbursementAgent（售后与发票）当前为占位 Bean（build 返回 null），
-        // 售后/发票诉求统一由 itinerary_manage_agent 以服务工单形式受理，
+        // 售后/发票诉求统一由 ticket_manage_agent 以服务工单形式受理，
         // 待 ReimbursementAgent 真正实现后再拆分独立路由。
 
         ReActAgent agent = ReActAgent.builder()

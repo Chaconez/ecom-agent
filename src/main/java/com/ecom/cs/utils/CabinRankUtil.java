@@ -7,7 +7,7 @@ import java.util.Map;
 /**
  * 交通舱位/席别等级比较工具。
  *
- * <p>差旅政策中 {@code flightClass} / {@code trainSeatClass} 表示允许的「最高」舱位等级，
+ * <p>售后政策中 {@code flightClass} / {@code trainSeatClass} 表示允许的「最高」舱位等级，
  * 低于或等于该等级均视为合规。本工具将各类舱位名称归一化为数值等级进行比较。
  *
  * <p>等级体系（数值越大等级越高）：

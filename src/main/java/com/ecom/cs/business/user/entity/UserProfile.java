@@ -17,7 +17,7 @@ public class UserProfile {
     @TableId(value = "user_id", type = IdType.INPUT)
     private String userId;
     private String baseCity;
-    /** 用户职级，如 P5 / P6 / P7 / P8，对应差旅政策中的前置条件 */
+    /** 用户职级，如 P5 / P6 / P7 / P8，对应售后政策中的前置条件 */
     private String level;
     /** 姓名拼音（大写，姓在前名在后，中间空格分隔），如 "ZHANG SAN"，用于酒店预订联系人 */
     private String namePinyin;

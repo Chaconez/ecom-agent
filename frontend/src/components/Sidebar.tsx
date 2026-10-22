@@ -71,7 +71,7 @@ const emptyConversation = (): Conversation => ({
   planProgress: null,
   planTasks: [],
   thinkingByAgent: {},
-  travelData: [],
+  resultData: [],
   timeline: [],
   isThinking: false,
   activeAgent: 'MasterAgent',

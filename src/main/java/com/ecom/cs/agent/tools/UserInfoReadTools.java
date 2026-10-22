@@ -18,7 +18,7 @@ import java.util.Optional;
 /**
  * 用户信息读工具集：查询联系/乘机人信息与常驻城市，
  * 用于酒店/机票预订时自动填充乘客与联系人字段、推断出发城市。
- * 写操作见 {@link UserInfoWriteTools}，与差旅单/预订工具的 Read/Write 分离惯例保持一致。
+ * 写操作见 {@link UserInfoWriteTools}，与售后工单/预订工具的 Read/Write 分离惯例保持一致。
  *
  * @author Hollis
  */

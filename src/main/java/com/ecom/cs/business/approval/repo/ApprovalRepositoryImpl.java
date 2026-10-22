@@ -10,7 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
 /**
- * 差旅审批记录数据库实现（基于 MyBatis-Plus）
+ * 售后审批记录数据库实现（基于 MyBatis-Plus）
  *
  * @author Hollis
  */

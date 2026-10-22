@@ -30,7 +30,7 @@
 字段说明：
 
 - `intents`：识别出的意图列表。单意图时只有一项，`multi_intent` 为 `false`。
-- `target_agent`：必须是**目标子智能体在 Spring 容器中的 bean 名（camelCase）**，如 `bookingAgent`、`itineraryManageAgent`、`reimbursementAgent`、`infoAgent`、`masterAgent`。不要输出 PascalCase 的人类可读名。系统会直接通过 `context.getBean(target_agent, ReActAgent.class)` 查找并调用，命名必须严格匹配。
+- `target_agent`：必须是**目标子智能体在 Spring 容器中的 bean 名（camelCase）**，如 `orderAgent`、`ticketManageAgent`、`reimbursementAgent`、`infoAgent`、`masterAgent`。不要输出 PascalCase 的人类可读名。系统会直接通过 `context.getBean(target_agent, ReActAgent.class)` 查找并调用，命名必须严格匹配。
 - `primary_intent`：当前最核心或最紧迫的意图。
 - `multi_intent`：是否包含多个意图。
 - `overall_reason`：整体判断理由，多意图时必须说明各意图之间的关系。
@@ -41,14 +41,14 @@
 
 | 意图类别 | 说明                       | target_agent（camelCase） | 典型触发词/句式 |
 |---|---|---|---|
-| `order_query` | 用户查询订单状态、物流进度、历史订单       | `bookingAgent` | "我的订单到哪了""查一下物流""发货了吗""我买过什么" |
-| `order_cancel` | 用户取消订单、退掉未付款订单            | `bookingAgent` | "取消订单""这个不要了""帮我退掉" |
-| `order_create` | 用户下单购买商品                | `bookingAgent` | "我要买这个""来一件""加入购物车""帮我下单" |
-| `ticket_submit` | 用户提交服务工单（投诉、建议、升级处理）      | `itineraryManageAgent` | "我要投诉""反馈个问题""提个工单" |
-| `ticket_query` | 用户查询工单处理进度、状态、结果         | `itineraryManageAgent` | "工单进度怎么样""我的投诉有结果了吗""工单到哪一步了" |
-| `ticket_cancel` | 用户取消/撤回已提交的工单            | `itineraryManageAgent` | "取消工单""撤回投诉""这个工单作废" |
-| `ticket_modify` | 用户修改/补充工单内容              | `itineraryManageAgent` | "修改工单""补充一下投诉信息""改一下工单描述" |
-| `after_sale` | 用户售后、退换货、退款、发票（以服务工单形式受理）  | `itineraryManageAgent` | "我要退货""退款""换货""开发票""保修" |
+| `order_query` | 用户查询订单状态、物流进度、历史订单       | `orderAgent` | "我的订单到哪了""查一下物流""发货了吗""我买过什么" |
+| `order_cancel` | 用户取消订单、退掉未付款订单            | `orderAgent` | "取消订单""这个不要了""帮我退掉" |
+| `order_create` | 用户下单购买商品                | `orderAgent` | "我要买这个""来一件""加入购物车""帮我下单" |
+| `ticket_submit` | 用户提交服务工单（投诉、建议、升级处理）      | `ticketManageAgent` | "我要投诉""反馈个问题""提个工单" |
+| `ticket_query` | 用户查询工单处理进度、状态、结果         | `ticketManageAgent` | "工单进度怎么样""我的投诉有结果了吗""工单到哪一步了" |
+| `ticket_cancel` | 用户取消/撤回已提交的工单            | `ticketManageAgent` | "取消工单""撤回投诉""这个工单作废" |
+| `ticket_modify` | 用户修改/补充工单内容              | `ticketManageAgent` | "修改工单""补充一下投诉信息""改一下工单描述" |
+| `after_sale` | 用户售后、退换货、退款、发票（以服务工单形式受理）  | `ticketManageAgent` | "我要退货""退款""换货""开发票""保修" |
 | `product_consult` | 用户咨询商品信息、价格、活动规则、平台政策     | `infoAgent` | "这个多少钱""有优惠吗""什么材质的""怎么选" |
 | `general_info` | 天气、交通等通用信息查询              | `infoAgent` | "今天天气怎么样""怎么去仓库" |
 | `greeting` | 用户打招呼、寒暄                 | `masterAgent` | "你好""在吗" |
@@ -85,7 +85,7 @@
    - 当用户问题明显不相关或无法判断时，返回 `intent: "unknown"`，`target_agent: "masterAgent"`。
 
 6. **面向下游的输出约束**：
-   - `reason`/`overall_reason` 会在思考面板向用户展示，**绝不允许**包含工具函数名、子智能体 Bean 名、内部字段名与文件路径（如 `query_booking_record`、`cancel_booking`、`itineraryManageAgent`、`primary_intent` 等 `snake_case` 或 camelCase 名称），必须用中文自然语描述分类理由（如“用户明确要求查询订单物流”“同时包含订单取消与投诉两个动作”）。`intent`、`target_agent` 等枚举字段仅在字段值中使用，不得在描述性文本中引用。
+   - `reason`/`overall_reason` 会在思考面板向用户展示，**绝不允许**包含工具函数名、子智能体 Bean 名、内部字段名与文件路径（如 `query_ecommerce_order`、`cancel_order`、`ticketManageAgent`、`primary_intent` 等 `snake_case` 或 camelCase 名称），必须用中文自然语描述分类理由（如“用户明确要求查询订单物流”“同时包含订单取消与投诉两个动作”）。`intent`、`target_agent` 等枚举字段仅在字段值中使用，不得在描述性文本中引用。
 
 ## 示例
 
@@ -100,7 +100,7 @@ Output:
   "intents": [
     {
       "intent": "order_query",
-      "target_agent": "bookingAgent",
+      "target_agent": "orderAgent",
       "confidence": "high",
       "reason": "用户明确要求查询订单的物流进度。"
     }
@@ -122,13 +122,13 @@ Output:
   "intents": [
     {
       "intent": "order_cancel",
-      "target_agent": "bookingAgent",
+      "target_agent": "orderAgent",
       "confidence": "high",
       "reason": "用户明确要求取消昨天的订单。"
     },
     {
       "intent": "ticket_submit",
-      "target_agent": "itineraryManageAgent",
+      "target_agent": "ticketManageAgent",
       "confidence": "high",
       "reason": "用户同时要投诉物流问题，属于提交服务工单。"
     }

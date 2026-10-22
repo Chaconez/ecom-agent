@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
 import ProgressCard, { PlanTaskList } from './ProgressCard';
-import TravelResultCard from './TravelResultCard';
-import type { PlanProgress, PlanTask, TravelData } from '../types';
+import AgentResultCard from './AgentResultCard';
+import type { PlanProgress, PlanTask, AgentResultData } from '../types';
 
 type TabKey = 'progress' | 'plan' | 'results';
 
@@ -17,17 +17,17 @@ interface Props {
   progress: PlanProgress;
   thinkingByAgent: Record<string, string[]>;
   planTasks: PlanTask[];
-  travelData: TravelData[];
+  resultData: AgentResultData[];
 }
 
 export default function ProcessingPanel({
   progress,
   thinkingByAgent,
   planTasks,
-  travelData,
+  resultData,
 }: Props) {
   const hasPlan = planTasks.length > 0;
-  const hasResults = travelData.length > 0;
+  const hasResults = resultData.length > 0;
 
   const [activeTab, setActiveTab] = useState<TabKey>('progress');
 
@@ -43,11 +43,11 @@ export default function ProcessingPanel({
   }, [planTasks.length]);
 
   useEffect(() => {
-    if (travelData.length > 0 && prevResultCount.current === 0) {
+    if (resultData.length > 0 && prevResultCount.current === 0) {
       setActiveTab('results');
     }
-    prevResultCount.current = travelData.length;
-  }, [travelData.length]);
+    prevResultCount.current = resultData.length;
+  }, [resultData.length]);
 
   const tabs: TabDef[] = [
     {
@@ -79,7 +79,7 @@ export default function ProcessingPanel({
           <path d="M5 7h6M5 10h4" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
         </svg>
       ),
-      badge: hasResults ? travelData.length : undefined,
+      badge: hasResults ? resultData.length : undefined,
     },
   ];
 
@@ -130,8 +130,8 @@ export default function ProcessingPanel({
         )}
         {resolvedTab === 'results' && (
           <div className="processing-results-section">
-            {travelData.map((td, idx) => (
-              <TravelResultCard key={`travel-${idx}`} data={td} />
+            {resultData.map((td, idx) => (
+              <AgentResultCard key={`result-${idx}`} data={td} />
             ))}
           </div>
         )}

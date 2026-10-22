@@ -27,7 +27,7 @@ public class SubjectiveAssessorAgent extends AgentBase {
     private static final Logger logger = LoggerFactory.getLogger(SubjectiveAssessorAgent.class);
 
     private static final Map<String, String> SOURCE_LABELS = Map.of(
-            "experience", "差旅体验",
+            "experience", "售后体验",
             "resilience", "行程韧性",
             "preference", "偏好匹配"
     );

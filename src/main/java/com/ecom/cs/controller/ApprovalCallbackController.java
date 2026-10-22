@@ -1,6 +1,6 @@
 package com.ecom.cs.controller;
 
-import com.ecom.cs.business.order.service.TravelOrderService;
+import com.ecom.cs.business.order.service.AfterSaleTicketService;
 import com.ecom.cs.controller.request.DingTalkCallbackEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ApprovalCallbackController {
 
     @Autowired
-    private TravelOrderService travelOrderService;
+    private AfterSaleTicketService ticketService;
 
     @PostMapping("/dingtalk/approval")
     public String onApprovalEvent(@RequestBody DingTalkCallbackEvent event) {
@@ -25,9 +25,9 @@ public class ApprovalCallbackController {
         String result = event.getResult();
         boolean agree = "agree".equalsIgnoreCase(result);
 
-        // 审批决策 + 同步差旅单状态，由事务保证原子性（与管理员审批接口共用，非待审批状态幂等跳过）
-        // 审批结果不主动推送给 Agent 会话：用户通过“我的差旅”页或对话中查询审批状态获知结果
-        travelOrderService.decideAndSyncOrder(instanceId, agree, event.getRemark());
+        // 审批决策 + 同步售后工单状态，由事务保证原子性（与管理员审批接口共用，非待审批状态幂等跳过）
+        // 审批结果不主动推送给 Agent 会话：用户通过“我的售后”页或对话中查询审批状态获知结果
+        ticketService.decideAndSyncOrder(instanceId, agree, event.getRemark());
 
         return "success";
     }

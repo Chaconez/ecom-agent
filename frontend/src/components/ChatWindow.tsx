@@ -8,7 +8,7 @@ import { logout } from '../api/auth';
 import { sendChatMessageSSE, sendUserResponseSSE, interruptAgent, fetchMessages, fetchConversations, updateMessageFeedback, fetchDebugAgents, sendDebugAgentMessageSSE, type DebugAgentInfo, type RemoteMessage } from '../api/chat';
 import AgentMessageBlock from './AgentMessageBlock';
 import UserInteractionCard from './UserInteractionCard';
-import type { Message, PlanTask, UserInteraction, TravelData, BookingResult, PlanHtmlData } from '../types';
+import type { Message, PlanTask, UserInteraction, AgentResultData, OrderResult, PlanHtmlData } from '../types';
 
 /** HUMAN 模式（人工客服接管）下的轮询间隔（ms） */
 const HUMAN_MODE_POLL_INTERVAL = 3000;
@@ -24,7 +24,7 @@ function toLocalMessage(m: RemoteMessage): Message {
     progress: m.extra?.progress,
     thinkingByAgent: m.extra?.thinkingByAgent,
     planTasks: m.extra?.planTasks,
-    travelData: m.extra?.travelData,
+    resultData: m.extra?.resultData,
     timeline: m.extra?.timeline,
     feedback: m.feedback ?? null,
     feedbackAt: m.feedbackAt,
@@ -125,15 +125,15 @@ function isRawContentBlock(item: unknown): boolean {
 }
 
 /**
- * 清洗后端推送的 travel_data：
+ * 清洗后端推送的 result_data：
  * - 过滤掉 MCP 内容块类条目，避免将原始 JSON 直接展示为卡片；
  * - 若无有效条目则返回 null（不渲染卡片，由正文 Markdown 展示）。
  */
-function sanitizeTravelData(td: TravelData | null | undefined): TravelData | null {
+function sanitizeResultData(td: AgentResultData | null | undefined): AgentResultData | null {
   if (!td || !td.type || !Array.isArray(td.items)) return null;
   const items = (td.items as unknown[]).filter((it) => !isRawContentBlock(it));
   if (items.length === 0) return null;
-  return { ...td, items: items as TravelData['items'] };
+  return { ...td, items: items as AgentResultData['items'] };
 }
 
 export default function ChatWindow() {
@@ -165,7 +165,7 @@ export default function ChatWindow() {
     appendToLastAgentMessage,
     addProgressStep,
     updatePlanTasks,
-    addTravelData,
+    addResultData,
     snapshotProgressToLastMessage,
     clearProgress,
     appendThinking,
@@ -441,24 +441,24 @@ export default function ChatWindow() {
         }
         break;
       }
-      case 'travel_data': {
+      case 'result_data': {
         try {
-          const td = JSON.parse(data) as TravelData;
-          const sanitized = sanitizeTravelData(td);
+          const td = JSON.parse(data) as AgentResultData;
+          const sanitized = sanitizeResultData(td);
           if (sanitized) {
-            addTravelData(sanitized);
-            addTimelineItem({ kind: 'travel', data: sanitized });
+            addResultData(sanitized);
+            addTimelineItem({ kind: 'result', data: sanitized });
           }
         } catch {
           // ignore malformed
         }
         break;
       }
-      case 'booking_result': {
+      case 'order_result': {
         try {
-          const br = JSON.parse(data) as BookingResult;
+          const br = JSON.parse(data) as OrderResult;
           if (br && br.orderId) {
-            addTimelineItem({ kind: 'booking', data: br });
+            addTimelineItem({ kind: 'order', data: br });
           }
         } catch {
           // ignore malformed

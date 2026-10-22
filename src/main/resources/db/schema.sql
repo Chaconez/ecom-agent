@@ -12,14 +12,14 @@ CREATE TABLE IF NOT EXISTS agentscope_session (
     ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 
-CREATE TABLE IF NOT EXISTS `travel_order` (
-    `order_id`       VARCHAR(64)  NOT NULL COMMENT '差旅单ID',
+CREATE TABLE IF NOT EXISTS `after_sale_ticket` (
+    `order_id`       VARCHAR(64)  NOT NULL COMMENT '售后工单ID',
     `user_id`        VARCHAR(64)  NOT NULL COMMENT '申请人ID',
     `destination`    VARCHAR(256) DEFAULT NULL COMMENT '目的地',
     `departure_city` VARCHAR(128) DEFAULT NULL COMMENT '出发城市',
     `departure_date` VARCHAR(32)  DEFAULT NULL COMMENT '出发日期',
     `return_date`    VARCHAR(32)  DEFAULT NULL COMMENT '返回日期',
-    `purpose`        VARCHAR(512) DEFAULT NULL COMMENT '出差事由',
+    `purpose`        VARCHAR(512) DEFAULT NULL COMMENT '售后事由',
     `status`         VARCHAR(32)  NOT NULL DEFAULT 'DRAFT' COMMENT '状态: DRAFT/SUBMITTED/APPROVED/REJECTED/COMPLETED/CANCELLED',
     `approval_id`    VARCHAR(64)  DEFAULT NULL COMMENT '关联审批单ID',
     `plan_html_url`  VARCHAR(512) DEFAULT NULL COMMENT '行程方案HTML的MinIO对象key',
@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS `travel_order` (
     PRIMARY KEY (`order_id`),
     KEY `idx_user_id` (`user_id`),
     KEY `idx_user_status` (`user_id`, `status`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '差旅申请单';
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '售后工单单';
 
 
 CREATE TABLE IF NOT EXISTS `approval_record` (
@@ -40,12 +40,12 @@ CREATE TABLE IF NOT EXISTS `approval_record` (
     `remark`              VARCHAR(512)  DEFAULT NULL COMMENT '备注',
     `submit_time`         DATETIME      DEFAULT NULL COMMENT '提交时间',
     `update_time`         DATETIME      DEFAULT NULL COMMENT '最后更新时间',
-    `order_id`            VARCHAR(64)   DEFAULT NULL COMMENT '关联差旅单ID',
+    `order_id`            VARCHAR(64)   DEFAULT NULL COMMENT '关联售后工单ID',
     PRIMARY KEY (`process_instance_id`),
     KEY `idx_user_id` (`user_id`),
     KEY `idx_order_id` (`order_id`),
     KEY `idx_order_submit` (`order_id`, `submit_time`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '差旅审批记录';
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '售后审批记录';
 
 
 CREATE TABLE IF NOT EXISTS `user_profile` (
@@ -77,10 +77,10 @@ CREATE TABLE IF NOT EXISTS `user_account` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '用户登录账号表';
 
 -- ============================================================
--- 差旅政策配置（城市等级已改由 application.yml 配置，此处仅管理政策规则）
+-- 售后政策配置（城市等级已改由 application.yml 配置，此处仅管理政策规则）
 -- ============================================================
 
-CREATE TABLE IF NOT EXISTS `travel_policy_rule` (
+CREATE TABLE IF NOT EXISTS `after_sale_policy_rule` (
     `id`                    BIGINT      NOT NULL AUTO_INCREMENT COMMENT '自增主键',
     `level_min`             INT         NOT NULL COMMENT '职级区间下限（数字）',
     `level_max`             INT         NOT NULL COMMENT '职级区间上限（99表示无上限）',
@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS `travel_policy_rule` (
     `advance_booking_days`  INT         NOT NULL DEFAULT 3 COMMENT '提前预订最少天数',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_level_city` (`level_min`, `level_max`, `city_tier`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '差旅政策规则表';
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '售后政策规则表';
 
 
 -- ============================================================
@@ -147,15 +147,15 @@ CREATE TABLE IF NOT EXISTS `user_api_key` (
 ) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '用户第三方 API Key（加密存储）';
 
 -- ============================================================
--- Agent 预订记录（机票 / 酒店 / 火车票等，兼容多预订平台）
+-- Agent 预订记录（商品 / 服务等，兼容多预订平台）
 -- ============================================================
 
-CREATE TABLE IF NOT EXISTS `booking_record` (
+CREATE TABLE IF NOT EXISTS `ecommerce_order` (
     `id`                BIGINT        NOT NULL AUTO_INCREMENT COMMENT '自增主键',
-    `booking_id`        VARCHAR(64)   NOT NULL COMMENT '内部预订单号（系统生成，全局唯一）',
+    `order_no`        VARCHAR(64)   NOT NULL COMMENT '内部预订单号（系统生成，全局唯一）',
     `user_id`           VARCHAR(64)   NOT NULL COMMENT '用户ID',
     `conversation_id`   VARCHAR(64)   DEFAULT NULL COMMENT '关联会话ID（chat_conversation.conversation_id）',
-    `travel_order_id`    VARCHAR(64)   DEFAULT NULL COMMENT '关联差旅单ID（travel_order.order_id，可为空）',
+    `after_sale_ticket_id`    VARCHAR(64)   DEFAULT NULL COMMENT '关联售后工单ID（after_sale_ticket.order_id，可为空）',
     `biz_type`          VARCHAR(16)   NOT NULL COMMENT '预订业务类型: FLIGHT/HOTEL/TRAIN/TICKET/CRUISE/VACATION',
     `platform`          VARCHAR(32)   NOT NULL COMMENT '预订平台: tuniu / rolling-go-hotel / flight-manager 等',
     `external_order_no` VARCHAR(128)  DEFAULT NULL COMMENT '外部平台主订单号',
@@ -171,18 +171,18 @@ CREATE TABLE IF NOT EXISTS `booking_record` (
     `end_time`          DATETIME      DEFAULT NULL COMMENT '服务结束时间（到达/离店时间）',
     `detail`            JSON          DEFAULT NULL COMMENT '平台原始/明细信息JSON（航班号、房型、乘客、行程等）',
     `remark`            VARCHAR(512)  DEFAULT NULL COMMENT '备注',
-    `booked_at`         DATETIME      DEFAULT NULL COMMENT '下单时间',
+    `ordered_at`         DATETIME      DEFAULT NULL COMMENT '下单时间',
     `created_at`        DATETIME      DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_at`        DATETIME      DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     `deleted`           TINYINT       NOT NULL DEFAULT 0 COMMENT '逻辑删除标志',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_booking_id` (`booking_id`),
+    UNIQUE KEY `uk_order_no` (`order_no`),
     UNIQUE KEY `uk_platform_order` (`platform`, `biz_type`, `external_order_no`),
     KEY `idx_user_id` (`user_id`),
     KEY `idx_user_biz` (`user_id`, `biz_type`),
-    KEY `idx_travel_order_id` (`travel_order_id`),
+    KEY `idx_after_sale_ticket_id` (`after_sale_ticket_id`),
     KEY `idx_status` (`status`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = 'Agent预订记录（机票/酒店/火车票等，兼容多平台）';
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = 'Agent预订记录（商品/服务等，兼容多平台）';
 
 
 -- ============================================================
@@ -206,10 +206,10 @@ INSERT IGNORE INTO `user_account` (`user_id`, `username`, `password`, `real_name
     ('u004',  'david',   '123456', '赵六',     'USER'),
     ('u_test', 'test',   '123456', '测试账号',  'USER');
 
--- 3. 差旅政策规则（4 个职级区间 × 3 个城市等级 = 12 条）
+-- 3. 售后政策规则（4 个职级区间 × 3 个城市等级 = 12 条）
 -- 列顺序：level_min, level_max, city_tier, flight_class, train_seat_class,
 --         hotel_limit, hotel_star_limit, daily_meal_limit, daily_transport_limit, approval_threshold, advance_booking_days
-INSERT IGNORE INTO `travel_policy_rule`
+INSERT IGNORE INTO `after_sale_policy_rule`
     (`level_min`,`level_max`,`city_tier`,`flight_class`,`train_seat_class`,`hotel_limit`,`hotel_star_limit`,`daily_meal_limit`,`daily_transport_limit`,`approval_threshold`,`advance_booking_days`)
 VALUES
     -- P8+：商务舱 / 一等座
@@ -229,27 +229,27 @@ VALUES
     (1, 5,  '新一线', '经济舱',        '二等座', 350, 4, 150, 200, 5000, 3),
     (1, 5,  '其他',   '经济舱',        '二等座', 300, 4, 150, 200, 5000, 3);
 
--- 4. 差旅申请单示例（覆盖 DRAFT / SUBMITTED / APPROVED 三种典型状态）
-INSERT IGNORE INTO `travel_order`
+-- 4. 售后工单示例（覆盖 DRAFT / SUBMITTED / APPROVED 三种典型状态）
+INSERT IGNORE INTO `after_sale_ticket`
     (`order_id`, `user_id`, `destination`, `departure_city`, `departure_date`, `return_date`, `purpose`, `status`, `approval_id`, `created_at`, `updated_at`)
 VALUES
-    ('to_20260701_001', 'u001', '上海', '北京', '2026-07-10', '2026-07-12', '客户拜访',   'APPROVED',  'ap_20260701_001', '2026-07-01 10:00:00', '2026-07-02 09:00:00'),
-    ('to_20260710_002', 'u001', '深圳', '北京', '2026-07-20', '2026-07-22', '产品交流会', 'SUBMITTED', 'ap_20260710_002', '2026-07-10 14:30:00', '2026-07-10 14:30:00'),
-    ('to_20260715_003', 'u002', '成都', '上海', '2026-08-01', '2026-08-03', '业务培训',   'DRAFT',     NULL,              '2026-07-15 09:00:00', '2026-07-15 09:00:00');
+    ('to_20260701_001', 'u001', '主动降噪无线蓝牙耳机 Pro', NULL, '2026-07-10', NULL, '右耳偶发断连，申请换货', 'APPROVED',  'ap_20260701_001', '2026-07-01 10:00:00', '2026-07-02 09:00:00'),
+    ('to_20260710_002', 'u001', '轻薄笔记本电脑 14 英寸',   NULL, '2026-07-20', NULL, '屏幕出现亮点，申请换机', 'SUBMITTED', 'ap_20260710_002', '2026-07-10 14:30:00', '2026-07-10 14:30:00'),
+    ('to_20260715_003', 'u002', '智能手表 GT 运动版',       NULL, '2026-08-01', NULL, '表带卡扣断裂，申请维修', 'DRAFT',     NULL,              '2026-07-15 09:00:00', '2026-07-15 09:00:00');
 
--- 5. 审批记录示例（关联上面的差旅单）
+-- 5. 审批记录示例（关联上面的售后工单）
 INSERT IGNORE INTO `approval_record`
     (`process_instance_id`, `user_id`, `title`, `status`, `approval_form`, `remark`, `submit_time`, `update_time`, `order_id`)
 VALUES
-    ('ap_20260701_001', 'u001', '张三-北京→上海-2026/07/10~07/12', 'APPROVED', '{"destination":"上海","budget":3000}', '预算合理，同意', '2026-07-01 10:05:00', '2026-07-02 09:00:00', 'to_20260701_001'),
-    ('ap_20260710_002', 'u001', '张三-北京→深圳-2026/07/20~07/22', 'PENDING',  '{"destination":"深圳","budget":4500}', NULL,             '2026-07-10 14:35:00', '2026-07-10 14:35:00', 'to_20260710_002');
+    ('ap_20260701_001', 'u001', '张三-耳机换货申请-2026/07/01', 'APPROVED', '{"product":"主动降噪无线蓝牙耳机 Pro","type":"换货"}', '符合七天无理由，同意', '2026-07-01 10:05:00', '2026-07-02 09:00:00', 'to_20260701_001'),
+    ('ap_20260710_002', 'u001', '张三-笔记本换机申请-2026/07/10', 'PENDING',  '{"product":"轻薄笔记本电脑 14 英寸","type":"换货"}', NULL,             '2026-07-10 14:35:00', '2026-07-10 14:35:00', 'to_20260710_002');
 
--- 6. 外部预订记录示例（已通过 tuniu-cli / rolling-go-hotel 完成的机票 + 酒店）
-INSERT IGNORE INTO `booking_record`
-    (`booking_id`, `user_id`, `conversation_id`, `travel_order_id`, `biz_type`, `platform`, `external_order_no`, `status`, `payment_status`, `title`, `total_amount`, `currency`, `contact_name`, `contact_phone`, `start_time`, `end_time`, `remark`, `booked_at`)
+-- 6. 电商订单示例（外部渠道已支付订单）
+INSERT IGNORE INTO `ecommerce_order`
+    (`order_no`, `user_id`, `conversation_id`, `after_sale_ticket_id`, `biz_type`, `platform`, `external_order_no`, `status`, `payment_status`, `title`, `total_amount`, `currency`, `contact_name`, `contact_phone`, `start_time`, `end_time`, `remark`, `ordered_at`)
 VALUES
-    ('bk_20260702_001', 'u001', NULL, 'to_20260701_001', 'FLIGHT', 'tuniu',             'TN2026070200001',  'CONFIRMED', 'PAID', '北京→上海 MU5101 07/10 09:00',    1280.00, 'CNY', '张三', '13800000002', '2026-07-10 09:00:00', '2026-07-10 11:20:00', '示例数据', '2026-07-02 10:30:00'),
-    ('bk_20260702_002', 'u001', NULL, 'to_20260701_001', 'HOTEL',  'rolling-go-hotel',  'RGH20260702HTL88', 'CONFIRMED', 'PAID', '上海静安希尔顿酒店-高级大床房',    1580.00, 'CNY', '张三', '13800000002', '2026-07-10 15:00:00', '2026-07-12 12:00:00', '示例数据', '2026-07-02 10:45:00');-- ============================================================
+    ('ec_20260702_001', 'u001', NULL, 'to_20260701_001', 'GOODS', 'ecom-mall', 'EC2026070200001', 'CONFIRMED', 'PAID', '主动降噪无线蓝牙耳机 Pro × 1', 799.00,  'CNY', '张三', '13800000002', NULL, NULL, '示例数据', '2026-07-02 10:30:00'),
+    ('ec_20260702_002', 'u001', NULL, 'to_20260701_001', 'GOODS', 'ecom-mall', 'EC2026070200002', 'CONFIRMED', 'PAID', '轻薄笔记本电脑 14 英寸 × 1',   4599.00, 'CNY', '张三', '13800000002', NULL, NULL, '示例数据', '2026-07-02 10:45:00');-- ============================================================
 -- 电商智能客服：个性化推荐模块（2026-10-20 新增）
 -- 1. ecom_product      商品库（mock 数据，P3 替换为真实商品中心）
 -- 2. user_preference   用户偏好持久化（修复长期记忆读回延迟问题，DB 作为权威源）
@@ -320,10 +320,10 @@ CREATE TABLE IF NOT EXISTS `user_preference` (
 INSERT IGNORE INTO `user_profile` (`user_id`, `base_city`, `level`, `chinese_name`, `phone`) VALUES
 ('u_test', '上海', 'NORMAL', '测试账号', '13800000007');
 
--- 2. 服务工单主表（travel_order：工单语义化后的字段映射）
+-- 2. 服务工单主表（after_sale_ticket：工单语义化后的字段映射）
 --    destination=问题对象（商品）  departure_city=联系城市
 --    departure_date=申请日期  return_date=期望处理截止  purpose=问题描述
-INSERT IGNORE INTO `travel_order`
+INSERT IGNORE INTO `after_sale_ticket`
     (`order_id`, `user_id`, `destination`, `departure_city`, `departure_date`, `return_date`, `purpose`, `status`, `approval_id`, `created_at`, `updated_at`)
 VALUES
     ('to_20261018_701', 'u_test', '主动降噪无线蓝牙耳机 Pro', '上海', '2026-10-18', '2026-10-25', '右耳偶发断连，申请换货', 'SUBMITTED', 'ap_20261018_701', '2026-10-18 10:00:00', '2026-10-18 10:05:00'),
@@ -344,26 +344,26 @@ VALUES
      '{"type":"refund","product":"SPF50+ 清爽防晒霜","orderNo":"EC20261005004","issue":"商品破损","expect":"退款"}',
      '已超出售后期，建议联系快递理赔', '2026-10-05 09:20:00', '2026-10-06 11:00:00', 'to_20261005_703');
 
--- 4. 商品订单（booking_record，biz_type=GOODS）
-INSERT IGNORE INTO `booking_record`
-    (`booking_id`, `user_id`, `conversation_id`, `travel_order_id`, `biz_type`, `platform`, `external_order_no`, `status`, `external_status`, `payment_status`, `title`, `total_amount`, `currency`, `contact_name`, `contact_phone`, `start_time`, `end_time`, `detail`, `remark`, `booked_at`)
+-- 4. 商品订单（ecommerce_order，biz_type=GOODS）
+INSERT IGNORE INTO `ecommerce_order`
+    (`order_no`, `user_id`, `conversation_id`, `after_sale_ticket_id`, `biz_type`, `platform`, `external_order_no`, `status`, `external_status`, `payment_status`, `title`, `total_amount`, `currency`, `contact_name`, `contact_phone`, `start_time`, `end_time`, `detail`, `remark`, `ordered_at`)
 VALUES
-    ('bk_20261018_701', 'u_test', NULL, NULL, 'GOODS', 'ecom-mall', 'EC20261018001', 'CONFIRMED', '已发货', 'PAID',
+    ('ec_20261018_701', 'u_test', NULL, NULL, 'GOODS', 'ecom-mall', 'EC20261018001', 'CONFIRMED', '已发货', 'PAID',
      '主动降噪无线蓝牙耳机 Pro × 1', 799.00, 'CNY', '测试账号', '13800000007',
      '2026-10-18 10:00:00', NULL,
      '{"product_id":"p_001","quantity":1,"address":"上海市浦东新区演示路 1 号","logistics":{"carrier":"顺丰","trackingNo":"SF1234567890","status":"运输中"}}',
      '示例数据', '2026-10-18 10:00:00'),
-    ('bk_20261015_702', 'u_test', NULL, NULL, 'GOODS', 'ecom-mall', 'EC20261015002', 'PENDING_PAYMENT', '待支付', 'UNPAID',
+    ('ec_20261015_702', 'u_test', NULL, NULL, 'GOODS', 'ecom-mall', 'EC20261015002', 'PENDING_PAYMENT', '待支付', 'UNPAID',
      '缓震专业跑步鞋 × 1', 459.00, 'CNY', '测试账号', '13800000007',
      '2026-10-15 20:30:00', NULL,
      '{"product_id":"p_009","quantity":1,"address":"上海市浦东新区演示路 1 号"}',
      '示例数据', '2026-10-15 20:30:00'),
-    ('bk_20261010_703', 'u_test', NULL, NULL, 'GOODS', 'ecom-mall', 'EC20261010003', 'COMPLETED', '已完成', 'PAID',
+    ('ec_20261010_703', 'u_test', NULL, NULL, 'GOODS', 'ecom-mall', 'EC20261010003', 'COMPLETED', '已完成', 'PAID',
      '三合一防风冲锋衣 × 1', 659.00, 'CNY', '测试账号', '13800000007',
      '2026-10-10 09:00:00', '2026-10-13 16:00:00',
      '{"product_id":"p_008","quantity":1,"address":"上海市浦东新区演示路 1 号"}',
      '示例数据', '2026-10-10 09:00:00'),
-    ('bk_20261005_704', 'u_test', NULL, NULL, 'GOODS', 'ecom-mall', 'EC20261005004', 'CANCELLED', '已取消', NULL,
+    ('ec_20261005_704', 'u_test', NULL, NULL, 'GOODS', 'ecom-mall', 'EC20261005004', 'CANCELLED', '已取消', NULL,
      'SPF50+ 清爽防晒霜 × 2', 258.00, 'CNY', '测试账号', '13800000007',
      '2026-10-05 15:00:00', NULL,
      '{"product_id":"p_012","quantity":2,"address":"上海市浦东新区演示路 1 号"}',

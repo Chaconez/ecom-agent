@@ -16,11 +16,11 @@ public class ConflictItem {
     @JSONField(name = "severity")
     private ConflictSeverity severity;
 
-    /** 冲突的已有差旅单 ID */
+    /** 冲突的已有售后工单 ID */
     @JSONField(name = "order_id")
     private String orderId;
 
-    /** 已有差旅单的简要描述（出发→到达 + 日期） */
+    /** 已有售后工单的简要描述（出发→到达 + 日期） */
     @JSONField(name = "order_summary")
     private String orderSummary;
 

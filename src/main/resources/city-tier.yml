@@ -1,7 +1,7 @@
 # 城市等级配置
 # YAML key 必须使用 ASCII，中文城市名放入 List 值中
 # 未出现在任何列表中的城市默认归为"其他"
-travel:
+ecom:
   policy:
     tier1-cities:
       - 北京

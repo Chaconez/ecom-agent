@@ -62,9 +62,9 @@ public class DebugAgentController {
         ALLOWED_AGENTS.put("QueryRewritingAgent", "问题改写");
         ALLOWED_AGENTS.put("IntentRecognitionAgent", "意图识别");
         ALLOWED_AGENTS.put("InfoAgent", "信息查询");
-        ALLOWED_AGENTS.put("ItineraryPlanAgent", "行程规划");
-        ALLOWED_AGENTS.put("ItineraryReviewAgent", "行程审核");
-        ALLOWED_AGENTS.put("ItineraryManageAgent", "行程管理");
+        ALLOWED_AGENTS.put("ProductShoppingAgent", "行程规划");
+        ALLOWED_AGENTS.put("TicketReviewAgent", "行程审核");
+        ALLOWED_AGENTS.put("TicketManageAgent", "行程管理");
     }
 
     @Autowired

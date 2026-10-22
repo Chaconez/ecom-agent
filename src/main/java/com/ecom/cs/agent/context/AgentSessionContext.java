@@ -1,6 +1,6 @@
 package com.ecom.cs.agent.context;
 
-import com.ecom.cs.business.order.entity.TravelOrder;
+import com.ecom.cs.business.order.entity.AfterSaleTicket;
 import org.springframework.util.Assert;
 
 import java.util.List;
@@ -21,9 +21,9 @@ public class AgentSessionContext {
     private final String userId;
     private final String sessionId;
     /**
-     * 差旅政策缓存：政策按城市分层（一线/新一线/其他）而不同，必须以城市为键；工具可能并发执行，用 ConcurrentHashMap
+     * 售后政策缓存：政策按城市分层（一线/新一线/其他）而不同，必须以城市为键；工具可能并发执行，用 ConcurrentHashMap
      */
-    private final Map<String, String> travelPolicyByCity = new ConcurrentHashMap<>();
+    private final Map<String, String> policyByCity = new ConcurrentHashMap<>();
     /**
      * 用户联系/乘机人信息缓存（JSON）：会话内准静态，但 update_user_contact_info 成功后必须调用 {@link #invalidateUserContactInfo()} 失效
      */
@@ -33,12 +33,12 @@ public class AgentSessionContext {
      */
     private volatile String userBaseLocation;
     /**
-     * 当前操作关联的差旅单ID（在查询/创建差旅单时自动设置，供 BookingPersistenceHook 关联预订记录）。
+     * 当前操作关联的售后工单ID（在查询/创建售后工单时自动设置，供 OrderPersistenceHook 关联预订记录）。
      * 并行 Toolkit（parallel=true）下工具可能跨线程写、Hook 跨线程读，需 volatile 保证可见性
      */
-    private volatile String travelOrderId;
+    private volatile String ticketId;
 
-    private volatile TravelOrder cachedOrder;
+    private volatile AfterSaleTicket cachedOrder;
 
     public AgentSessionContext(String userId, String sessionId) {
         Assert.notNull(userId, "userId must not be null");
@@ -48,17 +48,17 @@ public class AgentSessionContext {
     }
 
     /**
-     * 获取指定城市的差旅政策缓存。
+     * 获取指定城市的售后政策缓存。
      *
      * @param city 目的城市；为 null 时返回 null（不走缓存）
      */
-    public String getTravelPolicy(String city) {
-        return city != null ? travelPolicyByCity.get(city.trim()) : null;
+    public String getPolicy(String city) {
+        return city != null ? policyByCity.get(city.trim()) : null;
     }
 
-    public void setTravelPolicy(String city, String travelPolicy) {
-        if (city != null && travelPolicy != null) {
-            travelPolicyByCity.put(city.trim(), travelPolicy);
+    public void setPolicy(String city, String policy) {
+        if (city != null && policy != null) {
+            policyByCity.put(city.trim(), policy);
         }
     }
 
@@ -101,21 +101,21 @@ public class AgentSessionContext {
         this.userBaseLocation = null;
     }
 
-    public String getTravelOrderId() {
-        return travelOrderId;
+    public String getTicketId() {
+        return ticketId;
     }
 
-    public void setTravelOrderId(String travelOrderId) {
-        this.travelOrderId = travelOrderId;
+    public void setTicketId(String ticketId) {
+        this.ticketId = ticketId;
     }
 
-    public TravelOrder getCachedOrder() {
+    public AfterSaleTicket getCachedOrder() {
         return cachedOrder;
     }
 
-    public void setCachedOrder(TravelOrder cachedOrder) {
+    public void setCachedOrder(AfterSaleTicket cachedOrder) {
         this.cachedOrder = cachedOrder;
-        this.travelOrderId = cachedOrder.getOrderId();
+        this.ticketId = cachedOrder.getOrderId();
     }
 
     @Override

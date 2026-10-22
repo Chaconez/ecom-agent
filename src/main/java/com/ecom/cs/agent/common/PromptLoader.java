@@ -31,7 +31,7 @@ public final class PromptLoader {
     private static final int MAX_INCLUDE_DEPTH = 5;
 
     /** 主 prompt 缺失时的兼容兜底文案。 */
-    private static final String FALLBACK_PROMPT = "You are a helpful travel assistant.";
+    private static final String FALLBACK_PROMPT = "You are a helpful e-commerce customer service assistant.";
 
     private PromptLoader() {
     }

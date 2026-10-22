@@ -1,6 +1,6 @@
 package com.ecom.cs.agent.tools.model;
 
-import com.ecom.cs.config.TravelPolicyProperties;
+import com.ecom.cs.config.AfterSalePolicyProperties;
 import jakarta.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.List;
@@ -13,11 +13,11 @@ import org.springframework.stereotype.Service;
 /**
  * 城市间交通时长估算服务。todo 这个服务可以改用skill或者工具来实际查询城际交通用时。
  *
- * <p>用于行程冲突检测中判断"用户是否能在两个差旅单之间完成跨城交通"。
+ * <p>用于行程冲突检测中判断"用户是否能在两个售后工单之间完成跨城交通"。
  * 数据来源优先级：</p>
  * <ol>
  *   <li>显式配置的 {@code cityPairMinutes}（覆盖默认推断）</li>
- *   <li>城市分层推断（一线/新一线/二线/其他，配置来自 {@link TravelPolicyProperties}）</li>
+ *   <li>城市分层推断（一线/新一线/二线/其他，配置来自 {@link AfterSalePolicyProperties}）</li>
  *   <li>兜底：4 小时</li>
  * </ol>
  *
@@ -46,7 +46,7 @@ public class CityTransitTimeService {
     private static final int TIER1_MINUTES = 270;
 
     @Autowired
-    private TravelPolicyProperties policyProperties;
+    private AfterSalePolicyProperties policyProperties;
     private Map<String, Integer> cityPairMinutes;
 
     @PostConstruct
@@ -80,7 +80,7 @@ public class CityTransitTimeService {
     public int estimateMinutes(String fromCity, String toCity) {
         if (isBlank(fromCity) || isBlank(toCity)) {
             // 候选单入参在工具层已强校验，走到这里意味着已有单存在脏数据
-            logger.warn("[CityTransitTime] 城市入参为空（from={}, to={}），按兜底 {} 分钟估算，请检查差旅单数据",
+            logger.warn("[CityTransitTime] 城市入参为空（from={}, to={}），按兜底 {} 分钟估算，请检查售后工单数据",
                     fromCity, toCity, DEFAULT_MINUTES);
             return DEFAULT_MINUTES;
         }

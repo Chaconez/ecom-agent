@@ -3,7 +3,7 @@ package com.ecom.cs.agent.tools.planner;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
-import com.ecom.cs.agent.tools.ItineraryPlannerTools;
+import com.ecom.cs.agent.tools.ProductShoppingTools;
 import com.ecom.cs.utils.JsonUtil;
 
 import java.time.LocalDate;
@@ -17,7 +17,7 @@ import java.util.Map;
  * 行程规划工具通用静态方法集合。
  *
  * <p>包含日期时间解析、JSON 访问、数值格式化等无状态的辅助方法，
- * 供 {@link ItineraryPlannerTools} 及 planner 包内各类共用。
+ * 供 {@link ProductShoppingTools} 及 planner 包内各类共用。
  *
  * @author Hollis
  */

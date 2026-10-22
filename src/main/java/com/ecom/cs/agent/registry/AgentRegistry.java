@@ -40,7 +40,7 @@ public class AgentRegistry {
      * {@code IntentRecognitionAgent} / {@code QueryRewritingAgent} 这类直接继承
      * {@link io.agentscope.core.agent.AgentBase} 的 Agent。
      *
-     * <p>agentName 命名规则：首字母小写即为 Spring bean 名，例如 "ItineraryManageAgent" → "itineraryManageAgent"。</p>
+     * <p>agentName 命名规则：首字母小写即为 Spring bean 名，例如 "TicketManageAgent" → "ticketManageAgent"。</p>
      */
     public Agent getAgent(String name) {
         return getAgent(name, Agent.class);

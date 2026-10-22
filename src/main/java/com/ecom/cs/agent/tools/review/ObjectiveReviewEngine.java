@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * 客观六维校验引擎：编排六个 {@link ObjectiveReviewer}，汇总校验结果。
  * <p>
- * 替代原 ItineraryReviewTools 中的 {@code reviewSingle()} 方法，
+ * 替代原 TicketReviewTools 中的 {@code reviewSingle()} 方法，
  * 将六维校验职责从工具类中解耦，便于独立单元测试和规则扩展。
  *
  * @author Hollis
@@ -31,7 +31,7 @@ public class ObjectiveReviewEngine {
      * 对单个行程方案执行六维客观校验。
      *
      * @param itinerary 行程方案 JSON
-     * @param policy    差旅政策 JSON，可能为空对象
+     * @param policy    售后政策 JSON，可能为空对象
      * @return 校验结果 JSON，包含 overall_status / checks / issues / suggestions
      */
     public JSONObject review(JSONObject itinerary, JSONObject policy) {

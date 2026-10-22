@@ -3,7 +3,7 @@ package com.ecom.cs.controller;
 import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
 import com.alibaba.fastjson2.JSON;
-import com.ecom.cs.agent.memory.TravelPreferenceLongTermMemoryFactory;
+import com.ecom.cs.agent.memory.UserPreferenceLongTermMemoryFactory;
 import com.ecom.cs.business.preference.entity.UserPreference;
 import com.ecom.cs.business.preference.repo.UserPreferenceRepository;
 import io.agentscope.core.memory.LongTermMemory;
@@ -29,8 +29,8 @@ import java.util.*;
  * <p>提供预定义的用户偏好选项（购物 / 服务 / 物流售后 / 常用信息）供用户勾选，
  * 保存后写入百炼长期记忆，供 Agent 在服务过程中通过 {@code retrieve_from_memory} 召回。</p>
  *
- * <p>读取时直接走 {@link com.ecom.cs.agent.memory.TravelPreferenceLongTermMemory#retrieve}，
- * 其内部已有 Redis 缓存层（{@link com.ecom.cs.agent.memory.TravelPreferenceMemoryCache}），
+ * <p>读取时直接走 {@link com.ecom.cs.agent.memory.UserPreferenceLongTermMemory#retrieve}，
+ * 其内部已有 Redis 缓存层（{@link com.ecom.cs.agent.memory.UserPreferenceMemoryCache}），
  * 无需额外存储。</p>
  *
  * @author Hollis
@@ -43,7 +43,7 @@ public class PreferenceController {
     private static final Logger logger = LoggerFactory.getLogger(PreferenceController.class);
 
     @Autowired
-    private TravelPreferenceLongTermMemoryFactory memoryFactory;
+    private UserPreferenceLongTermMemoryFactory memoryFactory;
 
     @Autowired
     private UserPreferenceRepository preferenceRepository;
@@ -216,7 +216,7 @@ public class PreferenceController {
 
     /**
      * 从百炼长期记忆中召回用户偏好摘要。
-     * 已经被 {@link com.ecom.cs.agent.memory.TravelPreferenceMemoryCache} 缓存，30 分钟内不会重复调百炼。
+     * 已经被 {@link com.ecom.cs.agent.memory.UserPreferenceMemoryCache} 缓存，30 分钟内不会重复调百炼。
      */
     private String retrieveFromLongTermMemory(String userId) {
         try {

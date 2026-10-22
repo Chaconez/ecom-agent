@@ -21,7 +21,7 @@ public interface ApprovalRepository {
     /** 按状态查询审批单，按提交时间倒序 */
     List<ApprovalRecord> findByStatus(ApprovalRecordStatus status);
 
-    /** 按差旅单ID查询最新审批单 */
+    /** 按售后工单ID查询最新审批单 */
     Optional<ApprovalRecord> findLatestByOrderId(String orderId);
 
     ApprovalRecord save(ApprovalRecord record);

@@ -16,7 +16,7 @@ public interface ObjectiveReviewer {
      * 对行程方案执行单一维度校验，结果写入 collector。
      *
      * @param itinerary 行程方案 JSON
-     * @param policy    差旅政策 JSON，可能为空对象（无政策时）
+     * @param policy    售后政策 JSON，可能为空对象（无政策时）
      * @param collector 校验结果收集器
      */
     void review(JSONObject itinerary, JSONObject policy, ReviewCollector collector);

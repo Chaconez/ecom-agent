@@ -5,7 +5,7 @@ import com.ecom.cs.business.approval.entity.ApprovalRecord;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * 差旅审批记录 Mapper
+ * 售后审批记录 Mapper
  *
  * @author Hollis
  */

@@ -3,7 +3,7 @@ package com.ecom.cs.agent;
 import com.ecom.cs.agent.context.AgentSessionContext;
 import com.ecom.cs.agent.context.AgentSessionContextHolder;
 import com.ecom.cs.agent.hook.*;
-import com.ecom.cs.agent.memory.TravelPreferenceLongTermMemoryFactory;
+import com.ecom.cs.agent.memory.UserPreferenceLongTermMemoryFactory;
 import com.ecom.cs.agent.tools.*;
 import io.agentscope.core.memory.LongTermMemory;
 import io.agentscope.core.model.ExecutionConfig;
@@ -60,16 +60,16 @@ public abstract class BaseSubAgent {
     protected ActiveAgentPersistenceHook activeAgentPersistenceHook;
 
     @Autowired
-    protected TravelPreferenceLongTermMemoryFactory memoryFactory;
+    protected UserPreferenceLongTermMemoryFactory memoryFactory;
 
     @Autowired
     protected PolicyTools policyTools;
 
     @Autowired
-    protected TravelOrderReadTools travelOrderReadTools;
+    protected AfterSaleTicketReadTools ticketReadTools;
 
     @Autowired
-    protected BookingReadTools bookingReadTools;
+    protected OrderReadTools bookingReadTools;
 
     @Autowired
     protected ApplicationContext applicationContext;
@@ -93,10 +93,10 @@ public abstract class BaseSubAgent {
     protected ApiKeyTools apiKeyTools;
 
     @Autowired
-    protected ItineraryPlannerTools itineraryPlannerTools;
+    protected ProductShoppingTools productShoppingTools;
 
     @Autowired
-    protected ItineraryPlanReadTools itineraryPlanReadTools;
+    protected ProductShoppingReadTools productShoppingReadTools;
 
     @Autowired
     protected FlightApiKeyHook flightApiKeyHook;
@@ -181,7 +181,7 @@ public abstract class BaseSubAgent {
      * @param factory 长期记忆工厂；为 {@code null} 时直接返回 {@code null}
      * @return 长期记忆实例；factory 为 {@code null} 或当前线程未携带会话上下文时返回 {@code null}
      */
-    protected static LongTermMemory createLongTermMemory(TravelPreferenceLongTermMemoryFactory factory) {
+    protected static LongTermMemory createLongTermMemory(UserPreferenceLongTermMemoryFactory factory) {
         if (factory == null) {
             return null;
         }

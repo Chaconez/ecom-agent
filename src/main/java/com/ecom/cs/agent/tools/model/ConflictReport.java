@@ -1,14 +1,14 @@
 package com.ecom.cs.agent.tools.model;
 
 import com.alibaba.fastjson2.annotation.JSONField;
-import com.ecom.cs.agent.tools.TravelOrderConflictTools;
+import com.ecom.cs.agent.tools.AfterSaleTicketConflictTools;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * 行程冲突检查报告。
- * <p>由 {@link TravelOrderConflictTools#checkTravelOrderConflicts} 返回的 JSON 结构。</p>
+ * <p>由 {@link AfterSaleTicketConflictTools#checkAfterSaleTicketConflicts} 返回的 JSON 结构。</p>
  *
  * @author Hollis
  */

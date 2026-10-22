@@ -156,7 +156,7 @@ public class ReviewArbitratorService {
     private static String sourceLabel(String source) {
         return switch (source) {
             case "objective" -> "客观审核（六维确定性校验）";
-            case "experience" -> "差旅体验审核";
+            case "experience" -> "售后体验审核";
             case "resilience" -> "行程韧性审核";
             case "preference" -> "偏好匹配审核";
             default -> source;

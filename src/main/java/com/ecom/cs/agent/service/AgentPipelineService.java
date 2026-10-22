@@ -35,7 +35,7 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * 编排差旅 Agent 调用流水线，把「问题改写」与「意图识别」集成为一条条件流水线：
+ * 编排售后 Agent 调用流水线，把「问题改写」与「意图识别」集成为一条条件流水线：
  *
  * <ol>
  *   <li>先用<b>原始问题</b>做 L1/L2 快速意图识别（{@link IntentRecognitionRouter}，不触发 L3 LLM）；</li>
