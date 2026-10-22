@@ -69,7 +69,7 @@ public abstract class BaseSubAgent {
     protected AfterSaleTicketReadTools ticketReadTools;
 
     @Autowired
-    protected OrderReadTools bookingReadTools;
+    protected OrderReadTools orderReadTools;
 
     @Autowired
     protected ApplicationContext applicationContext;

@@ -106,7 +106,7 @@ app:
     # 是否启用 tool 维度熔断。默认关闭，按需开启。
     enabled: ${TOOL_CB_ENABLED:true}
     # 受监控的 tool 名称白名单（逗号分隔）。只有在此列表中的 tool 才会被熔断。
-    # 例：tuniuHotelSearch, flyaiFlightSearch —— 接外部接口/慢依赖的 tool 按需添加。
+    # 例：外部慢接口工具 —— 接第三方接口/慢依赖的 tool 按需添加。
     monitored-tool-names: ${TOOL_CB_MONITORED_NAMES:query_weather,query_destination_news}
     # 触发降级的连续失败次数阈值。
     failure-threshold: 3

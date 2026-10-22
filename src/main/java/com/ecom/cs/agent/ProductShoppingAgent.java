@@ -63,7 +63,7 @@ public class ProductShoppingAgent extends BaseSubAgent {
 
         toolkit.registration().tool(policyTools).apply();
         toolkit.registration().tool(ticketReadTools).apply();
-        toolkit.registration().tool(bookingReadTools).apply();
+        toolkit.registration().tool(orderReadTools).apply();
         toolkit.registration().tool(userInfoReadTools).apply();
         toolkit.registration().tool(userInfoWriteTools).apply();
         toolkit.registration().tool(apiKeyTools).apply();

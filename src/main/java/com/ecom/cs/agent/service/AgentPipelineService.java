@@ -597,7 +597,7 @@ public class AgentPipelineService {
             String intentCode = primary.getString("intent");
 
             // 保守策略：仅高置信度才直跳，中/低置信度一律走 MasterAgent 二次确认。
-            // LLM 输出的 "low" 在子智能体路由上仍然可能召错 Agent（例如把行程规划误识为机票查询），
+            // LLM 输出的 "low" 在子智能体路由上仍然可能召错 Agent（例如把售后申请误识为订单查询），
             // 多一次 LLM 推理的代价远低于一次错误路由。
             if (!IntentRecognitionResult.Confidence.HIGH.name().equalsIgnoreCase(confidence)) {
                 logger.info("[PIPELINE] 单意图 confidence={} 非 high，保守起见仍走 MasterAgent (intent={})",

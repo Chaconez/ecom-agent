@@ -25,7 +25,7 @@ export interface Message {
   progress?: PlanProgress;
   /** 快照的该轮思考过程（每个 Agent 有多轮） */
   thinkingByAgent?: Record<string, string[]>;
-  /** 快照的 ItineraryPlanAgent 任务列表 */
+  /** 快照的规划型智能体任务列表 */
   planTasks?: PlanTask[];
   /** 快照的搜索结果卡片 */
   resultData?: AgentResultData[];
@@ -54,7 +54,7 @@ export interface PlanStep {
   arguments?: string;
 }
 
-/** ItineraryPlanAgent plan-and-execute 规划的单个子任务 */
+/** 规划型智能体（plan-and-execute）拆解的单个子任务 */
 export interface PlanTask {
   idx: number;
   name: string;

@@ -48,7 +48,7 @@ public class TicketManageAgent extends BaseSubAgent {
         // query_after_sale_ticket
         toolkit.registration().tool(ticketReadTools).apply();
         // query_ecommerce_order（查询外部预订记录：商品/服务等）
-        toolkit.registration().tool(bookingReadTools).apply();
+        toolkit.registration().tool(orderReadTools).apply();
         // check_after_sale_ticket_conflicts（行程冲突检测：时间重叠 + 跨城衍接）
         toolkit.registration().tool(ticketConflictTools).apply();
         // 用户信息查询与维护

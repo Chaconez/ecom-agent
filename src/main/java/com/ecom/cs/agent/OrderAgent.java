@@ -48,7 +48,7 @@ public class OrderAgent extends BaseSubAgent {
     private static final int MAX_ITERATIONS = 10;
 
     @Autowired
-    protected OrderPersistenceHook bookingPersistenceHook;
+    protected OrderPersistenceHook orderPersistenceHook;
 
     /**
      * 预订记录写工具集（cancel_order）。
@@ -65,7 +65,7 @@ public class OrderAgent extends BaseSubAgent {
         // 查询已审批售后工单（获取预订上下文）
         toolkit.registration().tool(ticketReadTools).apply();
         // 查询外部预订记录（商品/服务等）
-        toolkit.registration().tool(bookingReadTools).apply();
+        toolkit.registration().tool(orderReadTools).apply();
         // 取消预订
         toolkit.registration().tool(orderWriteTools).apply();
         // 用户信息查询
@@ -75,7 +75,7 @@ public class OrderAgent extends BaseSubAgent {
         toolkit.registration().tool(apiKeyTools).apply();
         toolkit.registration().tool(productShoppingReadTools).apply();
 
-        SkillBox skillBox = buildBookingSkillBox(toolkit);
+        SkillBox skillBox = buildOrderSkillBox(toolkit);
 
         LongTermMemory longTermMemory = createLongTermMemory(memoryFactory);
 
@@ -94,7 +94,7 @@ public class OrderAgent extends BaseSubAgent {
                 .hooks(List.of(dynamicTimeInjectionHook, new AutoContextHook(), cliResultCompressHook,
                         flightApiKeyHook, tuniuApiKeyHook, rghUserIsolationHook,
                         skillContentCollapseHook, sessionPersistenceHook, executionLoggerHook,
-                        progressNotifierHook, activeAgentPersistenceHook, bookingPersistenceHook,
+                        progressNotifierHook, activeAgentPersistenceHook, orderPersistenceHook,
                         new PendingToolRecoveryHook()))
                 .toolExecutionConfig(getToolConfig())
                 .sysPrompt(PromptLoader.loadStatic("order-agent-system.md"))
@@ -105,7 +105,7 @@ public class OrderAgent extends BaseSubAgent {
         return agent;
     }
 
-    private SkillBox buildBookingSkillBox(Toolkit toolkit) {
+    private SkillBox buildOrderSkillBox(Toolkit toolkit) {
         SkillBox skillBox = new SkillBox(toolkit);
         skillBox.registerSkill(skillRepository.getSkill("tuniu-cli"));
         ShellCommandTool shellTool = new ShellCommandTool(

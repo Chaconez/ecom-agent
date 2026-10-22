@@ -59,7 +59,7 @@ public class EcommerceOrder {
     /** 支付状态：UNPAID/PAID/REFUNDED */
     private String paymentStatus;
 
-    /** 预订标题（如“北京→上海 MU5101”或酒店名） */
+    /** 订单标题（商品名 + 规格 / 数量） */
     private String title;
 
     /** 订单总金额（元） */
@@ -80,7 +80,7 @@ public class EcommerceOrder {
     @TableField(typeHandler = InstantTypeHandler.class)
     private Instant endTime;
 
-    /** 平台原始/明细信息 JSON 字符串（航班号、房型、乘客、行程等） */
+    /** 平台原始/明细信息 JSON 字符串（规格、数量、物流等） */
     private String detail;
 
     private String remark;

@@ -6,7 +6,7 @@ export interface Conversation {
   title: string;
   messages: Message[];
   planProgress: PlanProgress | null;
-  /** ItineraryPlanAgent 当前规划的子任务列表 */
+  /** 规划型智能体当前拆解的子任务列表 */
   planTasks: PlanTask[];
   /** agentName → 当次请求中该 agent 的多轮推理文本（每个元素为一轮） */
   thinkingByAgent: Record<string, string[]>;
@@ -55,7 +55,7 @@ interface ChatState {
   addMessage: (msg: Message) => void;
   appendToLastAgentMessage: (text: string) => void;
   addProgressStep: (step: PlanStep) => void;
-  /** 更新 ItineraryPlanAgent 任务列表 */
+  /** 更新规划型智能体的任务列表 */
   updatePlanTasks: (tasks: PlanTask[]) => void;
   /** 添加搜索结果 */
   addResultData: (data: AgentResultData) => void;
