@@ -7,35 +7,33 @@
  *
  * 2. 在侧边栏开启「集群轮询」开关后，每次 API 请求自动轮询下一个地址。
  *
- * 3. 未配置 VITE_CLUSTER_URLS 时，降级使用 VITE_API_BASE（默认 http://localhost:8080）。
+ * 3. 未配置 VITE_CLUSTER_URLS 时，降级使用 VITE_API_BASE。
  *
- * VITE_API_BASE 三态语义（构建期烘入，改后需重新 build）：
- * - 未设置：本地开发默认 http://localhost:8080
- * - 设置为空串（VITE_API_BASE=）：**同源模式**，运行时取 window.location.origin。
- *   用于域名 + 反代部署（如 n.chacone.fun → nginx → 后端），构建产物不烘死任何
- *   主机地址，任意域名/端口访问都能把 /api 请求打到同源服务上。
+ * VITE_API_BASE 语义（构建期烘入，改后需重新 build）：
+ * - **未设置（默认）或显式空串：同源模式**，运行时取 window.location.origin。
+ *   这是部署默认值——产物不烘死任何主机地址，nginx 把 /api 反代到后端，
+ *   局域网 / 多设备 / 域名访问都能把 /api 打到同源服务上；本地 dev 由
+ *   vite.config.ts 的 /api 代理转发到后端。忘记传环境变量也不会打到 localhost。
  * - 设置为具体地址（如 http://192.168.3.3:8094）：直连该后端，
- *   仅限调用方能访问该地址的场景（纯内网部署）。
+ *   仅限调用方能访问该地址的场景（纯内网调试）。
  */
 
 import { useUiStore } from '../store/uiStore';
 
 /**
  * 解析单实例模式下的默认后端地址。
- * 同源模式（显式空串）让部署不再依赖构建机所在网络——这是移动端/外网访问的关键。
  */
 function resolveDefaultBase(): string {
   const raw = import.meta.env.VITE_API_BASE;
-  if (typeof raw === 'string') {
-    const trimmed = raw.trim();
-    if (trimmed !== '') {
-      return trimmed;
-    }
-    // 显式空串 = 同源模式：跟随页面地址，由反向代理转发 /api
-    if (typeof window !== 'undefined' && window.location?.origin) {
-      return window.location.origin;
-    }
+  // 显式配置了非空地址：直连该后端
+  if (typeof raw === 'string' && raw.trim() !== '') {
+    return raw.trim();
   }
+  // 未设置或显式空串 = 同源模式：跟随页面地址，由反向代理 / dev proxy 转发 /api
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return window.location.origin;
+  }
+  // 兜底：仅非浏览器环境（构建期 / SSR）会走到这里
   return 'http://localhost:8080';
 }
 
