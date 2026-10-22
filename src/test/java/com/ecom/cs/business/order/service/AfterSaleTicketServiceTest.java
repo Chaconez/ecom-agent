@@ -76,8 +76,10 @@ class AfterSaleTicketServiceTest {
                 .thenReturn(record("pi_1", ApprovalRecordStatus.PENDING));
 
         AfterSaleTicket order = AfterSaleTicket.builder()
-                .userId("u_1").destination("北京").departureCity("杭州")
-                .departureDate("2026-08-01").returnDate("2026-08-03").purpose("参加会议")
+                .userId("u_1")
+                .productName("主动降噪无线蓝牙耳机 Pro 黑色 1件")
+                .issueDesc("右耳偶发断连，申请换货")
+                .purchaseDate("2026-08-01")
                 .build();
 
         ApprovalRecord result = ticketService.createAndSubmit(order);
@@ -92,24 +94,26 @@ class AfterSaleTicketServiceTest {
 
     @Test
     void createAndSubmit_approvalFormEscapesSpecialChars() {
-        // purpose 含引号与反斜杠，验证表单仍是合法 JSON 且内容不失真（手拼字符串时代会翻车）
-        String trickyPurpose = "参加\"双十一\"发布会\\预算说明";
+        // 问题描述含引号与反斜杠，验证表单仍是合法 JSON 且内容不失真（手拼字符串时代会翻车）
+        String trickyIssue = "收到货后发现\"屏幕\"有裂纹\\申请退货退款";
         stubSaveAssignsId("to_1");
         when(approvalService.submit(eq("u_1"), anyString(), anyString(), eq("to_1")))
                 .thenReturn(record("pi_1", ApprovalRecordStatus.PENDING));
 
         AfterSaleTicket order = AfterSaleTicket.builder()
-                .userId("u_1").destination("北京").departureCity("杭州")
-                .departureDate("2026-08-01").returnDate("2026-08-03").purpose(trickyPurpose)
+                .userId("u_1")
+                .productName("智能手表 46mm 1件")
+                .issueDesc(trickyIssue)
+                .purchaseDate("2026-08-01")
                 .build();
         ticketService.createAndSubmit(order);
 
         ArgumentCaptor<String> formCaptor = ArgumentCaptor.forClass(String.class);
         verify(approvalService).submit(eq("u_1"), anyString(), formCaptor.capture(), eq("to_1"));
         JSONObject form = JSON.parseObject(formCaptor.getValue());
-        assertEquals(trickyPurpose, form.getString("purpose"));
+        assertEquals(trickyIssue, form.getString("issueDesc"));
         assertEquals("to_1", form.getString("orderId"));
-        assertEquals("北京", form.getString("destination"));
+        assertEquals("智能手表 46mm 1件", form.getString("productName"));
     }
 
     // ============ cancelWithApproval ============
@@ -180,8 +184,9 @@ class AfterSaleTicketServiceTest {
 
         AfterSaleTicket order = AfterSaleTicket.builder()
                 .orderId("to_1").userId("u_1").approvalId("pi_old")
-                .destination("上海").departureCity("杭州")
-                .departureDate("2026-08-05").returnDate("2026-08-06").purpose("修改后的行程")
+                .productName("智能手表 46mm 1件")
+                .issueDesc("表带卡扣断裂，申请换货")
+                .purchaseDate("2026-07-20")
                 .build();
 
         AfterSaleTicketService.ModifyOutcome outcome = ticketService.modifyAndResubmit(order);

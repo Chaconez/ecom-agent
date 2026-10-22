@@ -87,7 +87,7 @@ public class AfterSaleTicketReadTools {
 //            if (endDate != null && !endDate.isBlank()) {
 //                wrapper.le(AfterSaleTicket::getDepartureDate, endDate);
 //            }
-//            wrapper.orderByAsc(AfterSaleTicket::getDepartureDate);
+//            wrapper.orderByDesc(AfterSaleTicket::getPurchaseDate);
 //            orders = ticketMapper.selectList(wrapper);
 //        } else if (status != null && !status.isBlank()) {
 //            List<AfterSaleTicketStatus> statusList = parseStatusList(status);
@@ -101,7 +101,7 @@ public class AfterSaleTicketReadTools {
 //                LambdaQueryWrapper<AfterSaleTicket> wrapper = new LambdaQueryWrapper<AfterSaleTicket>()
 //                        .eq(AfterSaleTicket::getUserId, userId)
 //                        .in(AfterSaleTicket::getStatus, statusList)
-//                        .orderByAsc(AfterSaleTicket::getDepartureDate);
+//                        .orderByDesc(AfterSaleTicket::getPurchaseDate);
 //                orders = ticketMapper.selectList(wrapper);
 //            }
 //        } else {
@@ -120,25 +120,24 @@ public class AfterSaleTicketReadTools {
 //    }
 
 
-    @Tool(name = "query_after_sale_ticket", description = "查询用户服务工单列表或指定工单详情。支持按状态、申请日期范围过滤。（底层为售后工单表，电商场景下按服务工单语义使用）")
+    @Tool(name = "query_after_sale_ticket", description = "按商品名称与购买日期查询指定服务工单详情。")
     public String queryAfterSaleTicket(
             AgentSessionContext sessionCtx,
-            @ToolParam(name = "origin", description = "出发地城市，如'上海'")
-            String origin,
-            @ToolParam(name = "destination", description = "目的地城市，如'杭州'")
-            String destination,
-            @ToolParam(name = "departure_date", description = "出发日期，格式 YYYY-MM-DD")
-            String departureDate) {
+            @ToolParam(name = "product_name", description = "申请售后的商品名称，如'主动降噪无线蓝牙耳机 Pro'")
+            String productName,
+            @ToolParam(name = "purchase_date", description = "购买日期，格式 YYYY-MM-DD，可选", required = false)
+            String purchaseDate) {
 
         String userId = sessionCtx.getUserId();
-        logger.info("[TOOL][query_after_sale_ticket] userId={}, origin={}, destination={}, departureDate={}",
-                userId, origin, destination, departureDate);
+        logger.info("[TOOL][query_after_sale_ticket] userId={}, productName={}, purchaseDate={}",
+                userId, productName, purchaseDate);
 
         LambdaQueryWrapper<AfterSaleTicket> wrapper = new LambdaQueryWrapper<AfterSaleTicket>()
                 .eq(AfterSaleTicket::getUserId, userId)
-                .eq(AfterSaleTicket::getDepartureCity, origin)
-                .eq(AfterSaleTicket::getDestination, destination)
-                .eq(AfterSaleTicket::getDepartureDate, departureDate);
+                .eq(AfterSaleTicket::getProductName, productName);
+        if (purchaseDate != null && !purchaseDate.isBlank()) {
+            wrapper.eq(AfterSaleTicket::getPurchaseDate, purchaseDate);
+        }
 
         AfterSaleTicket ticket = ticketMapper.selectOne(wrapper);
 
@@ -178,8 +177,8 @@ public class AfterSaleTicketReadTools {
     public String queryAfterSaleTickets(
             AgentSessionContext sessionCtx,
             @ToolParam(name = "status", description = "状态过滤，支持单个或逗号分隔的多个状态，如 DRAFT 或 DRAFT,SUBMITTED。可选值: DRAFT/SUBMITTED/APPROVED/REJECTED/COMPLETED/CANCELLED", required = false) String status,
-            @ToolParam(name = "start_date", description = "筛选出发日期不早于此日期的售后工单，格式 YYYY-MM-DD，可选", required = false) String startDate,
-            @ToolParam(name = "end_date", description = "筛选出发日期不晚于此日期的售后工单，格式 YYYY-MM-DD，可选", required = false) String endDate) {
+            @ToolParam(name = "start_date", description = "筛选购买日期不早于此日期的售后工单，格式 YYYY-MM-DD，可选", required = false) String startDate,
+            @ToolParam(name = "end_date", description = "筛选购买日期不晚于此日期的售后工单，格式 YYYY-MM-DD，可选", required = false) String endDate) {
 
         String userId = sessionCtx.getUserId();
 
@@ -203,12 +202,12 @@ public class AfterSaleTicketReadTools {
                 }
             }
             if (startDate != null && !startDate.isBlank()) {
-                wrapper.le(AfterSaleTicket::getDepartureDate, endDate != null && !endDate.isBlank() ? endDate : startDate);
+                wrapper.ge(AfterSaleTicket::getPurchaseDate, startDate);
             }
             if (endDate != null && !endDate.isBlank()) {
-                wrapper.ge(AfterSaleTicket::getReturnDate, startDate);
+                wrapper.le(AfterSaleTicket::getPurchaseDate, endDate);
             }
-            wrapper.orderByAsc(AfterSaleTicket::getDepartureDate);
+            wrapper.orderByDesc(AfterSaleTicket::getPurchaseDate);
             orders = ticketMapper.selectList(wrapper);
         } else if (status != null && !status.isBlank()) {
             List<AfterSaleTicketStatus> statusList = parseStatusList(status);
@@ -222,7 +221,7 @@ public class AfterSaleTicketReadTools {
                 LambdaQueryWrapper<AfterSaleTicket> wrapper = new LambdaQueryWrapper<AfterSaleTicket>()
                         .eq(AfterSaleTicket::getUserId, userId)
                         .in(AfterSaleTicket::getStatus, statusList)
-                        .orderByAsc(AfterSaleTicket::getDepartureDate);
+                        .orderByDesc(AfterSaleTicket::getPurchaseDate);
                 orders = ticketMapper.selectList(wrapper);
             }
         } else {
@@ -290,98 +289,6 @@ public class AfterSaleTicketReadTools {
     // 行程时间有效性检查
     // ─────────────────────────────────────────────────────────────────────────
 
-    /**
-     * 检查用户已审批售后工单的日期有效性，用于行程规划前的前置校验。
-     *
-     * <p>判断逻辑：
-     * <ul>
-     *   <li>无 APPROVED 售后工单 → {@code valid=true}（可规划，只是还没有审批单）</li>
-     *   <li>当前日期 > 返回日期 → 行程已结束，{@code valid=false}</li>
-     *   <li>当前日期 >= 出发日期 → 行程已开始，{@code valid=false}</li>
-     *   <li>当前日期 < 出发日期 → 行程尚未开始，{@code valid=true}</li>
-     * </ul>
-     *
-     * @param sessionCtx 会话上下文（自动注入）
-     * @return JSON：{@code {valid, today, blocked_orders:[{order_id, destination, departure_date, return_date, status}], message}}
-     */
-    @Tool(name = "check_time_validity",
-            description = "检查用户售后工单的行程时间是否仍然有效（未开始/未结束），用于行程规划前的前置校验。" +
-                    "返回 valid=true 表示存在可规划的行程，valid=false 表示行程已开始或已结束、无法规划。")
-    public String checkTravelTimeValidity(AgentSessionContext sessionCtx, @ToolParam(name = "order_id", description = "售后工单ID") String orderId) {
-        String userId = sessionCtx.getUserId();
-        LocalDate today = LocalDate.now();
-
-        logger.info("[TOOL][check_time_validity] userId={}, today={}", userId, today);
-
-        AfterSaleTicket ticket = sessionCtx.getCachedOrder() == null ? ticketRepository.findByOrderId(orderId).orElse(null) : null;
-
-        if (ticket != null) {
-            sessionCtx.setCachedOrder(ticket);
-        }
-
-        Map<String, Object> result = new LinkedHashMap<>();
-        result.put("today", today.toString());
-        if (ticket == null) {
-            result.put("valid", true);
-            result.put("blocked_orders", List.of());
-            result.put("message", "当前尚不存在售后工单，但是仍可直接规划行程。");
-            logger.info("[TOOL][check_time_validity] userId={}, 无 APPROVED 售后工单", userId);
-            return JSON.toJSONString(result);
-        }
-
-        String blockReason = evaluateBlockReason(ticket, today);
-        List<Map<String, Object>> blockedOrders = new ArrayList<>();
-        if (blockReason != null) {
-            Map<String, Object> blocked = new LinkedHashMap<>();
-            blocked.put("order_id", ticket.getOrderId());
-            blocked.put("destination", ticket.getDestination());
-            blocked.put("departure_date", ticket.getDepartureDate());
-            blocked.put("return_date", ticket.getReturnDate());
-            blocked.put("reason", blockReason);
-            blockedOrders.add(blocked);
-        }
-
-        if (!blockedOrders.isEmpty()) {
-            result.put("valid", false);
-            result.put("blocked_orders", blockedOrders);
-            String firstReason = (String) blockedOrders.get(0).get("reason");
-            result.put("message", String.format("检测到%s的售后工单，无法进行规划。请告知用户并停止规划。", firstReason));
-            logger.info("[TOOL][check_time_validity] userId={}, 检测到 {} 个过期售后工单",
-                    userId, blockedOrders.size());
-        } else {
-            result.put("valid", true);
-            result.put("blocked_orders", List.of());
-            result.put("message", "售后工单日期均有效，可继续规划。");
-            logger.info("[TOOL][check_time_validity] userId={}, 所有 APPROVED 售后工单日期有效", userId);
-        }
-
-        return JSON.toJSONString(result);
-    }
-
-    /**
-     * 评估售后工单是否因时间原因被拦截。
-     *
-     * @return 拦截原因描述，null 表示日期有效不拦截
-     */
-    private String evaluateBlockReason(AfterSaleTicket order, LocalDate today) {
-        try {
-            if (order.getReturnDate() != null) {
-                LocalDate returnDate = LocalDate.parse(order.getReturnDate());
-                if (today.isAfter(returnDate)) {
-                    return String.format("行程已结束（返回日期 %s 已过）", order.getReturnDate());
-                }
-            }
-            if (order.getDepartureDate() != null) {
-                LocalDate departureDate = LocalDate.parse(order.getDepartureDate());
-                if (!today.isBefore(departureDate)) {
-                    return String.format("行程已开始（出发日期 %s 已到达或已过）", order.getDepartureDate());
-                }
-            }
-        } catch (DateTimeParseException e) {
-            logger.debug("[TOOL][check_time_validity] 日期解析失败: orderId={}, error={}", order.getOrderId(), e.getMessage());
-        }
-        return null;
-    }
 
     // ─────────────────────────────────────────────────────────────────────────
     // 审批状态检查（供 OrderAgent 使用）
@@ -422,17 +329,15 @@ public class AfterSaleTicketReadTools {
 
         if (ticket.getStatus() != AfterSaleTicketStatus.APPROVED) {
             result.put("approved", false);
-            result.put("message", "您想要预订的售后尚未完成审批，请先联系管理员审批通过。或者换一个新的售后行程帮您做预订。");
+            result.put("message", "该售后工单尚未通过审批，请先联系客服处理，或提交新的售后申请。");
             return JSON.toJSONString(result);
         }
 
         result.put("approved", true);
         result.put("order_id", ticket.getOrderId());
-        result.put("destination", ticket.getDestination());
-        result.put("departure_date", ticket.getDepartureDate());
-        result.put("return_date", ticket.getReturnDate());
-        result.put("message", String.format("存在已审批售后工单（%s → %s），可以执行预订。",
-                ticket.getDepartureCity(), ticket.getDestination()));
+        result.put("product_name", ticket.getProductName());
+        result.put("purchase_date", ticket.getPurchaseDate());
+        result.put("message", String.format("存在已审批售后工单（%s），可以继续处理。", ticket.getProductName()));
         logger.info("[TOOL][check_after_sale_ticket_approval] userId={}, 找到 APPROVED 售后工单 orderId={}",
                 userId, ticket.getOrderId());
 

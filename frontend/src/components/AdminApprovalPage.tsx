@@ -79,11 +79,9 @@ function ApprovalCard({
 
       {form && (
         <div className="admin-form-grid">
-          <FormField label="申请事由" value={form.purpose} />
-          <FormField label="出发城市" value={form.departureCity} />
-          <FormField label="目的地" value={form.destination} />
-          <FormField label="开始日期" value={form.departureDate} />
-          <FormField label="结束日期" value={form.returnDate} />
+          <FormField label="商品名称" value={form.productName} />
+          <FormField label="购买日期" value={form.purchaseDate} />
+          <FormField label="问题描述" value={form.issueDesc} />
         </div>
       )}
 

@@ -6,10 +6,10 @@ import com.ecom.cs.agent.context.AgentSessionContext;
 import com.ecom.cs.business.approval.entity.ApprovalRecord;
 import com.ecom.cs.business.approval.entity.ApprovalRecordStatus;
 import com.ecom.cs.business.approval.service.ApprovalService;
-import com.ecom.cs.business.order.repo.EcommerceOrderRepository;
 import com.ecom.cs.business.order.entity.AfterSaleTicket;
 import com.ecom.cs.business.order.entity.AfterSaleTicketStatus;
 import com.ecom.cs.business.order.repo.AfterSaleTicketRepository;
+import com.ecom.cs.business.order.repo.EcommerceOrderRepository;
 import com.ecom.cs.business.order.service.AfterSaleTicketService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,7 +28,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -45,6 +45,11 @@ import static org.mockito.Mockito.when;
 class AfterSaleTicketWriteToolsTest {
 
     private static final String USER_ID = "u_test";
+    private static final String PRODUCT = "主动降噪无线蓝牙耳机 Pro 黑色 1件";
+    private static final String ISSUE = "右耳偶发断连，申请换货";
+
+    /** 购买日期固定用过去日期，避免"不能晚于今天"的校验随运行时间失效 */
+    private static final String PURCHASE_DATE = "2026-08-01";
 
     @Mock
     private AfterSaleTicketRepository ticketRepository;
@@ -65,17 +70,16 @@ class AfterSaleTicketWriteToolsTest {
         ctx = new AgentSessionContext(USER_ID, "s_test");
     }
 
-    private AfterSaleTicket order(String orderId, AfterSaleTicketStatus status) {
+    private AfterSaleTicket ticket(String orderId, AfterSaleTicketStatus status) {
         return AfterSaleTicket.builder()
                 .orderId(orderId).userId(USER_ID)
-                .departureCity("北京").destination("上海")
-                .departureDate("2026-08-01").returnDate("2026-08-03")
-                .purpose("参加会议").status(status)
+                .productName(PRODUCT).issueDesc(ISSUE).purchaseDate(PURCHASE_DATE)
+                .status(status)
                 .build();
     }
 
     private static ApprovalRecord approval(String processInstanceId) {
-        return new ApprovalRecord(processInstanceId, USER_ID, "售后", ApprovalRecordStatus.PENDING,
+        return new ApprovalRecord(processInstanceId, USER_ID, "售后申请", ApprovalRecordStatus.PENDING,
                 "{}", null, Instant.now(), Instant.now());
     }
 
@@ -83,29 +87,37 @@ class AfterSaleTicketWriteToolsTest {
 
     @Test
     void submit_invalidDateFormat_rejected() {
-        JSONObject o = JSON.parseObject(tools.submitTravelApproval(ctx, "上海", "北京", "2026/08/01", "2026-08-03", "开会"));
+        JSONObject o = JSON.parseObject(tools.submitAfterSaleTicket(ctx, PRODUCT, ISSUE, "2026/08/01"));
         assertFalse(o.getBooleanValue("success"));
         assertEquals("INVALID_PARAM", o.getString("errorCode"));
         verifyNoInteractions(ticketService);
     }
 
     @Test
-    void submit_departureAfterReturn_rejected() {
-        JSONObject o = JSON.parseObject(tools.submitTravelApproval(ctx, "上海", "北京", "2026-08-05", "2026-08-03", "开会"));
+    void submit_blankProduct_rejected() {
+        JSONObject o = JSON.parseObject(tools.submitAfterSaleTicket(ctx, "  ", ISSUE, PURCHASE_DATE));
         assertFalse(o.getBooleanValue("success"));
-        assertEquals("INVALID_DATE_RANGE", o.getString("errorCode"));
+        assertEquals("INVALID_PARAM", o.getString("errorCode"));
     }
 
     @Test
-    void submit_duplicateActiveOrder_idempotentHit() {
-        // 已存在出行要素完全一致的生效中售后工单：直接返回已有单，不重复创建
-        AfterSaleTicket dup = order("to_dup", AfterSaleTicketStatus.SUBMITTED);
+    void submit_futurePurchaseDate_rejected() {
+        String tomorrow = LocalDate.now().plusDays(1).toString();
+        JSONObject o = JSON.parseObject(tools.submitAfterSaleTicket(ctx, PRODUCT, ISSUE, tomorrow));
+        assertFalse(o.getBooleanValue("success"));
+        assertEquals("INVALID_DATE", o.getString("errorCode"));
+        verifyNoInteractions(ticketService);
+    }
+
+    @Test
+    void submit_duplicateActiveTicket_idempotentHit() {
+        // 已存在商品/问题/购买日期完全一致的生效中工单：直接返回已有单，不重复创建
+        AfterSaleTicket dup = ticket("to_dup", AfterSaleTicketStatus.SUBMITTED);
         dup.setApprovalId("pi_dup");
-        when(ticketRepository.findActiveByUserIdAndDateRange(eq(USER_ID), any(), eq("2026-08-01"), eq("2026-08-03")))
-                .thenReturn(List.of(dup));
+        when(ticketRepository.findActiveByUserId(eq(USER_ID), any())).thenReturn(List.of(dup));
         when(approvalService.findByProcessInstanceId("pi_dup")).thenReturn(Optional.of(approval("pi_dup")));
 
-        JSONObject o = JSON.parseObject(tools.submitTravelApproval(ctx, "上海", "北京", "2026-08-01", "2026-08-03", "参加会议"));
+        JSONObject o = JSON.parseObject(tools.submitAfterSaleTicket(ctx, PRODUCT, ISSUE, PURCHASE_DATE));
 
         assertTrue(o.getBooleanValue("success"));
         assertEquals("to_dup", o.getString("orderId"));
@@ -116,40 +128,39 @@ class AfterSaleTicketWriteToolsTest {
 
     @Test
     void submit_goldenPath_setsSessionTicketId() {
-        when(ticketRepository.findActiveByUserIdAndDateRange(eq(USER_ID), any(), anyString(), anyString()))
-                .thenReturn(List.of());
+        when(ticketRepository.findActiveByUserId(eq(USER_ID), any())).thenReturn(List.of());
         when(ticketService.createAndSubmit(any(AfterSaleTicket.class))).thenAnswer(inv -> {
-            AfterSaleTicket order = inv.getArgument(0);
-            order.setOrderId("to_1");
-            order.setStatus(AfterSaleTicketStatus.SUBMITTED);
-            order.setApprovalId("pi_1");
+            AfterSaleTicket t = inv.getArgument(0);
+            t.setOrderId("to_1");
+            t.setStatus(AfterSaleTicketStatus.SUBMITTED);
+            t.setApprovalId("pi_1");
             return approval("pi_1");
         });
         when(ticketRepository.findByOrderId("to_1"))
-                .thenReturn(Optional.of(order("to_1", AfterSaleTicketStatus.SUBMITTED)));
+                .thenReturn(Optional.of(ticket("to_1", AfterSaleTicketStatus.SUBMITTED)));
 
-        JSONObject o = JSON.parseObject(tools.submitTravelApproval(ctx, "上海", "北京", "2026-08-01", "2026-08-03", "参加会议"));
+        JSONObject o = JSON.parseObject(tools.submitAfterSaleTicket(ctx, PRODUCT, ISSUE, PURCHASE_DATE));
 
         assertTrue(o.getBooleanValue("success"));
         assertEquals("to_1", o.getString("orderId"));
         assertEquals("pi_1", o.getString("processInstanceId"));
+        assertEquals(PRODUCT, o.getString("productName"));
         assertEquals("to_1", ctx.getTicketId());
     }
 
     @Test
     void submit_verifyStatusMismatch_reportsVerifyFailed() {
-        when(ticketRepository.findActiveByUserIdAndDateRange(eq(USER_ID), any(), anyString(), anyString()))
-                .thenReturn(List.of());
+        when(ticketRepository.findActiveByUserId(eq(USER_ID), any())).thenReturn(List.of());
         when(ticketService.createAndSubmit(any(AfterSaleTicket.class))).thenAnswer(inv -> {
-            AfterSaleTicket order = inv.getArgument(0);
-            order.setOrderId("to_1");
+            AfterSaleTicket t = inv.getArgument(0);
+            t.setOrderId("to_1");
             return approval("pi_1");
         });
         // 事务后查库状态仍是 DRAFT：验证应拦截
         when(ticketRepository.findByOrderId("to_1"))
-                .thenReturn(Optional.of(order("to_1", AfterSaleTicketStatus.DRAFT)));
+                .thenReturn(Optional.of(ticket("to_1", AfterSaleTicketStatus.DRAFT)));
 
-        JSONObject o = JSON.parseObject(tools.submitTravelApproval(ctx, "上海", "北京", "2026-08-01", "2026-08-03", "参加会议"));
+        JSONObject o = JSON.parseObject(tools.submitAfterSaleTicket(ctx, PRODUCT, ISSUE, PURCHASE_DATE));
 
         assertFalse(o.getBooleanValue("success"));
         assertEquals("VERIFY_FAILED", o.getString("errorCode"));
@@ -166,7 +177,7 @@ class AfterSaleTicketWriteToolsTest {
 
     @Test
     void cancel_wrongOwner_permissionDenied() {
-        AfterSaleTicket other = order("to_1", AfterSaleTicketStatus.SUBMITTED);
+        AfterSaleTicket other = ticket("to_1", AfterSaleTicketStatus.SUBMITTED);
         other.setUserId("u_other");
         when(ticketRepository.findByOrderId("to_1")).thenReturn(Optional.of(other));
 
@@ -179,7 +190,7 @@ class AfterSaleTicketWriteToolsTest {
     @Test
     void cancel_alreadyCancelled_invalidState() {
         when(ticketRepository.findByOrderId("to_1"))
-                .thenReturn(Optional.of(order("to_1", AfterSaleTicketStatus.CANCELLED)));
+                .thenReturn(Optional.of(ticket("to_1", AfterSaleTicketStatus.CANCELLED)));
         JSONObject o = JSON.parseObject(tools.cancelAfterSaleTicket(ctx, "to_1", null, null));
         assertEquals("INVALID_STATE", o.getString("errorCode"));
     }
@@ -187,7 +198,7 @@ class AfterSaleTicketWriteToolsTest {
     @Test
     void cancel_approvedWithoutForce_needConfirm() {
         when(ticketRepository.findByOrderId("to_1"))
-                .thenReturn(Optional.of(order("to_1", AfterSaleTicketStatus.APPROVED)));
+                .thenReturn(Optional.of(ticket("to_1", AfterSaleTicketStatus.APPROVED)));
 
         JSONObject o = JSON.parseObject(tools.cancelAfterSaleTicket(ctx, "to_1", null, null));
 
@@ -198,29 +209,29 @@ class AfterSaleTicketWriteToolsTest {
 
     @Test
     void cancel_goldenPath_clearsSessionTicketId() {
-        AfterSaleTicket order = order("to_1", AfterSaleTicketStatus.SUBMITTED);
-        when(ticketRepository.findByOrderId("to_1")).thenReturn(Optional.of(order));
-        when(ticketService.cancelWithApproval(order)).thenAnswer(inv -> {
-            order.setStatus(AfterSaleTicketStatus.CANCELLED);
+        AfterSaleTicket t = ticket("to_1", AfterSaleTicketStatus.SUBMITTED);
+        when(ticketRepository.findByOrderId("to_1")).thenReturn(Optional.of(t));
+        when(ticketService.cancelWithApproval(t)).thenAnswer(inv -> {
+            t.setStatus(AfterSaleTicketStatus.CANCELLED);
             return new AfterSaleTicketService.CancelOutcome(true, true, "pi_old");
         });
         when(orderRepository.findByUserIdAndTicketId(USER_ID, "to_1")).thenReturn(List.of());
         ctx.setTicketId("to_1");
 
-        JSONObject o = JSON.parseObject(tools.cancelAfterSaleTicket(ctx, "to_1", "行程有变", null));
+        JSONObject o = JSON.parseObject(tools.cancelAfterSaleTicket(ctx, "to_1", "不退了", null));
 
         assertTrue(o.getBooleanValue("success"));
         assertTrue(o.getBooleanValue("approvalCancelled"));
-        // 被取消的正是会话当前关联的售后工单：必须清空，防止后续预订挂到已取消的单上
+        // 被撤回的正是会话当前关联的售后工单：必须清空，防止后续订单挂到已撤回的单上
         assertNull(ctx.getTicketId());
     }
 
     @Test
-    void cancel_unrelatedSessionOrder_notCleared() {
-        AfterSaleTicket order = order("to_1", AfterSaleTicketStatus.SUBMITTED);
-        when(ticketRepository.findByOrderId("to_1")).thenReturn(Optional.of(order));
-        when(ticketService.cancelWithApproval(order)).thenAnswer(inv -> {
-            order.setStatus(AfterSaleTicketStatus.CANCELLED);
+    void cancel_unrelatedSessionTicket_notCleared() {
+        AfterSaleTicket t = ticket("to_1", AfterSaleTicketStatus.SUBMITTED);
+        when(ticketRepository.findByOrderId("to_1")).thenReturn(Optional.of(t));
+        when(ticketService.cancelWithApproval(t)).thenAnswer(inv -> {
+            t.setStatus(AfterSaleTicketStatus.CANCELLED);
             return new AfterSaleTicketService.CancelOutcome(true, false, null);
         });
         when(orderRepository.findByUserIdAndTicketId(USER_ID, "to_1")).thenReturn(List.of());
@@ -237,10 +248,10 @@ class AfterSaleTicketWriteToolsTest {
     @Test
     void modify_noFieldChanged_shortCircuits() {
         when(ticketRepository.findByOrderId("to_1"))
-                .thenReturn(Optional.of(order("to_1", AfterSaleTicketStatus.SUBMITTED)));
+                .thenReturn(Optional.of(ticket("to_1", AfterSaleTicketStatus.SUBMITTED)));
 
         // 提交的字段与当前值完全一致：应幂等短路，不撤审重提
-        JSONObject o = JSON.parseObject(tools.modifyAfterSaleTicket(ctx, "to_1", "上海", null, "2026-08-01", null, null, null));
+        JSONObject o = JSON.parseObject(tools.modifyAfterSaleTicket(ctx, "to_1", PRODUCT, null, PURCHASE_DATE, null));
 
         assertTrue(o.getBooleanValue("success"));
         assertTrue(o.getString("message").contains("未做任何修改"));
@@ -250,9 +261,9 @@ class AfterSaleTicketWriteToolsTest {
     @Test
     void modify_approvedWithoutForce_needConfirm() {
         when(ticketRepository.findByOrderId("to_1"))
-                .thenReturn(Optional.of(order("to_1", AfterSaleTicketStatus.APPROVED)));
+                .thenReturn(Optional.of(ticket("to_1", AfterSaleTicketStatus.APPROVED)));
 
-        JSONObject o = JSON.parseObject(tools.modifyAfterSaleTicket(ctx, "to_1", "深圳", null, null, null, null, null));
+        JSONObject o = JSON.parseObject(tools.modifyAfterSaleTicket(ctx, "to_1", "智能手表 1件", null, null, null));
 
         assertFalse(o.getBooleanValue("success"));
         assertTrue(o.getBooleanValue("needConfirm"));
@@ -260,14 +271,29 @@ class AfterSaleTicketWriteToolsTest {
     }
 
     @Test
-    void modify_effectiveDateRangeInvalid_rejected() {
-        when(ticketRepository.findByOrderId("to_1"))
-                .thenReturn(Optional.of(order("to_1", AfterSaleTicketStatus.SUBMITTED)));
-
-        // 只改出发日期，晚于原返回日期：新旧值综合校验应拦截
-        JSONObject o = JSON.parseObject(tools.modifyAfterSaleTicket(ctx, "to_1", null, null, "2026-08-10", null, null, null));
+    void modify_futurePurchaseDate_rejected() {
+        String tomorrow = LocalDate.now().plusDays(1).toString();
+        JSONObject o = JSON.parseObject(tools.modifyAfterSaleTicket(ctx, "to_1", null, null, tomorrow, null));
 
         assertFalse(o.getBooleanValue("success"));
-        assertEquals("INVALID_DATE_RANGE", o.getString("errorCode"));
+        assertEquals("INVALID_DATE", o.getString("errorCode"));
+        verifyNoInteractions(ticketService);
+    }
+
+    @Test
+    void modify_issueDescChanged_resubmits() {
+        AfterSaleTicket existing = ticket("to_1", AfterSaleTicketStatus.SUBMITTED);
+        when(ticketRepository.findByOrderId("to_1")).thenReturn(Optional.of(existing));
+        when(ticketService.modifyAndResubmit(any(AfterSaleTicket.class))).thenAnswer(inv -> {
+            AfterSaleTicket t = inv.getArgument(0);
+            t.setStatus(AfterSaleTicketStatus.SUBMITTED);
+            t.setApprovalId("pi_2");
+            return new AfterSaleTicketService.ModifyOutcome("pi_1", true, approval("pi_2"));
+        });
+
+        JSONObject o = JSON.parseObject(tools.modifyAfterSaleTicket(ctx, "to_1", null, "屏幕有划痕，申请退货退款", null, null));
+
+        assertTrue(o.getBooleanValue("success"));
+        assertTrue(o.getString("updatedFields").contains("问题描述"));
     }
 }

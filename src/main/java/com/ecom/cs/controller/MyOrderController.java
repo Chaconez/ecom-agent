@@ -199,15 +199,13 @@ public class MyOrderController {
         return ResponseEntity.ok(Map.of("cancelled", true, "message", result.getString("message")));
     }
 
-    /** 将售后工单 + 关联审批 + 关联预订记录聚合为前端视图 */
+    /** 将售后工单 + 关联审批 + 关联订单记录聚合为前端视图 */
     private Map<String, Object> toView(String userId, AfterSaleTicket order) {
         Map<String, Object> view = new LinkedHashMap<>();
         view.put("orderId", order.getOrderId());
-        view.put("destination", order.getDestination());
-        view.put("departureCity", order.getDepartureCity());
-        view.put("departureDate", order.getDepartureDate());
-        view.put("returnDate", order.getReturnDate());
-        view.put("purpose", order.getPurpose());
+        view.put("productName", order.getProductName());
+        view.put("issueDesc", order.getIssueDesc());
+        view.put("purchaseDate", order.getPurchaseDate());
         AfterSaleTicketStatus status = order.getStatus();
         view.put("status", status != null ? status.getCode() : null);
         view.put("statusLabel", status != null ? status.getLabel() : null);

@@ -1,28 +1,28 @@
 package com.ecom.cs.agent.tools.model;
 
 import com.alibaba.fastjson2.annotation.JSONField;
-import com.ecom.cs.agent.tools.AfterSaleTicketConflictTools;
+import com.ecom.cs.agent.tools.AfterSaleTicketDuplicateTools;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 行程冲突检查报告。
- * <p>由 {@link AfterSaleTicketConflictTools#checkAfterSaleTicketConflicts} 返回的 JSON 结构。</p>
+ * 售后工单重复检测报告。
+ * <p>由 {@link AfterSaleTicketDuplicateTools#checkDuplicateAfterSaleTicket} 返回的 JSON 结构。</p>
  *
  * @author Hollis
  */
 public class ConflictReport {
 
-    /** 是否有任何冲突（severity 任意级别均算） */
+    /** 是否存在重复（severity 任意级别均算） */
     @JSONField(name = "has_conflict")
     private boolean hasConflict;
 
-    /** 冲突总数 */
+    /** 重复记录总数 */
     @JSONField(name = "total_conflicts")
     private int totalConflicts;
 
-    /** 冲突明细列表（按严重等级降序） */
+    /** 重复明细列表（按严重等级降序） */
     @JSONField(name = "conflicts")
     private List<ConflictItem> conflicts = new ArrayList<>();
 

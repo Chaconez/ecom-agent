@@ -1,11 +1,11 @@
 package com.ecom.cs.agent.tools.model;
 
 /**
- * 行程冲突严重等级。
+ * 售后工单重复检测的严重等级。
  * <ul>
- *   <li>{@code HIGH}   — 物理上不可能：同时身处两地、出发当日无法赶到机场等。强烈建议用户调整。</li>
- *   <li>{@code MEDIUM} — 衔接紧张或路径断裂：行程间跨城交通时间不足。建议调整。</li>
- *   <li>{@code LOW}    — 仅作提示：同时间段相同城市重复提交等。允许直接继续。</li>
+ *   <li>{@code HIGH}   — 明确重复：同商品、同购买日期、同问题描述已存在生效中工单。</li>
+ *   <li>{@code MEDIUM} — 疑似重复：同一商品已存在其他生效中工单，需确认是否同一问题。</li>
+ *   <li>{@code LOW}    — 仅作提示：信息相近，可继续提交。</li>
  * </ul>
  * <p>fastjson2 默认按 {@code name()} 序列化，输出 JSON 与原字符串常量完全一致。
  *
@@ -13,9 +13,9 @@ package com.ecom.cs.agent.tools.model;
  */
 public enum ConflictSeverity {
 
-    /** 物理上不可能 */
+    /** 明确重复 */
     HIGH(0),
-    /** 衔接紧张或路径断裂 */
+    /** 疑似重复 */
     MEDIUM(1),
     /** 仅作提示 */
     LOW(2);

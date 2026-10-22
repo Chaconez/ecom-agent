@@ -9,7 +9,10 @@ import com.ecom.cs.config.InstantTypeHandler;
 import java.time.Instant;
 
 /**
- * 售后工单（售后工单单）
+ * 售后工单，对应 {@code after_sale_ticket} 表。
+ *
+ * <p>工单用于承载用户发起的退换货、维修、投诉、发票等服务请求，
+ * 提交后进入审批流，审批结果回写本表的 {@link #status}。</p>
  *
  * @author Hollis
  */
@@ -19,15 +22,16 @@ public class AfterSaleTicket {
     @TableId(value = "order_id", type = IdType.INPUT)
     private String orderId;
     private String userId;
-    private String destination;
-    private String departureCity;
-    private String departureDate;
-    private String returnDate;
-    private String purpose;
+    /** 申请售后的商品 / 服务名称，含规格与数量 */
+    private String productName;
+    /** 问题描述（用户诉求 + 现象说明） */
+    private String issueDesc;
+    /** 购买日期（yyyy-MM-dd），用于判断是否在售后政策有效期内 */
+    private String purchaseDate;
     private AfterSaleTicketStatus status;
     /** 关联审批单ID，提交审批后写入 */
     private String approvalId;
-    /** 行程方案 HTML 在 MinIO 中的对象 key（如 plans/to_20260701_001/1721700000.html） */
+    /** 工单详情 HTML 在 MinIO 中的对象 key（如 tickets/to_20260701_001/1721700000.html） */
     private String planHtmlUrl;
     /** 创建时间（自动填充） */
     @TableField(fill = FieldFill.INSERT, typeHandler = InstantTypeHandler.class)
@@ -66,28 +70,18 @@ public class AfterSaleTicket {
             return this;
         }
 
-        public Builder destination(String destination) {
-            order.destination = destination;
+        public Builder productName(String productName) {
+            order.productName = productName;
             return this;
         }
 
-        public Builder departureCity(String departureCity) {
-            order.departureCity = departureCity;
+        public Builder issueDesc(String issueDesc) {
+            order.issueDesc = issueDesc;
             return this;
         }
 
-        public Builder departureDate(String departureDate) {
-            order.departureDate = departureDate;
-            return this;
-        }
-
-        public Builder returnDate(String returnDate) {
-            order.returnDate = returnDate;
-            return this;
-        }
-
-        public Builder purpose(String purpose) {
-            order.purpose = purpose;
+        public Builder purchaseDate(String purchaseDate) {
+            order.purchaseDate = purchaseDate;
             return this;
         }
 
@@ -154,44 +148,28 @@ public class AfterSaleTicket {
         this.userId = userId;
     }
 
-    public String getDestination() {
-        return destination;
+    public String getProductName() {
+        return productName;
     }
 
-    public void setDestination(String destination) {
-        this.destination = destination;
+    public void setProductName(String productName) {
+        this.productName = productName;
     }
 
-    public String getDepartureCity() {
-        return departureCity;
+    public String getIssueDesc() {
+        return issueDesc;
     }
 
-    public void setDepartureCity(String departureCity) {
-        this.departureCity = departureCity;
+    public void setIssueDesc(String issueDesc) {
+        this.issueDesc = issueDesc;
     }
 
-    public String getDepartureDate() {
-        return departureDate;
+    public String getPurchaseDate() {
+        return purchaseDate;
     }
 
-    public void setDepartureDate(String departureDate) {
-        this.departureDate = departureDate;
-    }
-
-    public String getReturnDate() {
-        return returnDate;
-    }
-
-    public void setReturnDate(String returnDate) {
-        this.returnDate = returnDate;
-    }
-
-    public String getPurpose() {
-        return purpose;
-    }
-
-    public void setPurpose(String purpose) {
-        this.purpose = purpose;
+    public void setPurchaseDate(String purchaseDate) {
+        this.purchaseDate = purchaseDate;
     }
 
     public AfterSaleTicketStatus getStatus() {

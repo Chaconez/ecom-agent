@@ -11,11 +11,9 @@ function authHeaders(): Record<string, string> {
 export interface ApprovalForm {
   orderId?: string;
   userId?: string;
-  purpose?: string;
-  destination?: string;
-  departureCity?: string;
-  departureDate?: string;
-  returnDate?: string;
+  productName?: string;
+  issueDesc?: string;
+  purchaseDate?: string;
   [key: string]: unknown;
 }
 

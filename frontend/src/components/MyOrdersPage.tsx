@@ -121,7 +121,7 @@ function OrderCard({
         <span className="orders-card-route">{order.bizTypeLabel || '订单'}</span>
         {order.platform && <span className="orders-card-tag">{order.platform}</span>}
       </div>
-      <div className="orders-card-purpose">{order.title || order.externalOrderNo || order.orderNo}</div>
+      <div className="orders-card-title">{order.title || order.externalOrderNo || order.orderNo}</div>
       <div className="orders-card-meta">
         <StatusBadge code={order.status} label={order.statusLabel} classMap={STATUS_CLASS} />
         {order.totalAmount && (

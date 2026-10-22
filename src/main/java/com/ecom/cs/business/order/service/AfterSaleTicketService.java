@@ -63,7 +63,7 @@ public class AfterSaleTicketService {
         logger.info("[AfterSaleTicketService] ① 售后工单已创建 orderId={}", orderId);
 
         // ② 构建审批表单并提交审批单
-        ApprovalRecord record = approvalService.submit(savedOrder.getUserId(), savedOrder.getPurpose(),
+        ApprovalRecord record = approvalService.submit(savedOrder.getUserId(), buildApprovalSubject(savedOrder),
                 buildApprovalForm(savedOrder), orderId);
         logger.info("[AfterSaleTicketService] ② 审批单已提交 processInstanceId={}", record.getProcessInstanceId());
 
@@ -136,7 +136,7 @@ public class AfterSaleTicketService {
         ticketRepository.save(order);
 
         // 提交新审批单
-        ApprovalRecord newRecord = approvalService.submit(order.getUserId(), order.getPurpose(),
+        ApprovalRecord newRecord = approvalService.submit(order.getUserId(), buildApprovalSubject(order),
                 buildApprovalForm(order), orderId);
 
         // 售后工单关联新审批单
@@ -172,17 +172,23 @@ public class AfterSaleTicketService {
     }
 
     /**
-     * 构建审批表单 JSON 字符串（序列化交给 fastjson2，避免 purpose 等自由文本含引号/反斜杠时手拼出非法 JSON）
+     * 构建审批单标题：商品名称 + 售后诉求摘要，供审批列表直接展示。
+     */
+    private static String buildApprovalSubject(AfterSaleTicket ticket) {
+        String product = isBlank(ticket.getProductName()) ? "售后工单" : ticket.getProductName();
+        return String.format("%s 售后申请", product);
+    }
+
+    /**
+     * 构建审批表单 JSON 字符串（序列化交给 fastjson2，避免问题描述等自由文本含引号/反斜杠时手拼出非法 JSON）
      */
     private static String buildApprovalForm(AfterSaleTicket order) {
         Map<String, Object> form = new LinkedHashMap<>();
         form.put("orderId", order.getOrderId());
         form.put("userId", order.getUserId());
-        form.put("purpose", order.getPurpose());
-        form.put("destination", order.getDestination());
-        form.put("departureCity", order.getDepartureCity());
-        form.put("departureDate", order.getDepartureDate());
-        form.put("returnDate", order.getReturnDate());
+        form.put("productName", order.getProductName());
+        form.put("issueDesc", order.getIssueDesc());
+        form.put("purchaseDate", order.getPurchaseDate());
         return JSON.toJSONString(form);
     }
 

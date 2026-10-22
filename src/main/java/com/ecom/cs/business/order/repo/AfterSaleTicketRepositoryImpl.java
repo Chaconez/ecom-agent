@@ -37,9 +37,8 @@ public class AfterSaleTicketRepositoryImpl implements AfterSaleTicketRepository 
     }
 
     @Override
-    public List<AfterSaleTicket> findActiveByUserIdAndDateRange(String userId,
-                                                            java.util.Collection<AfterSaleTicketStatus> statuses,
-                                                            String fromDate, String toDate) {
+    public List<AfterSaleTicket> findActiveByUserId(String userId,
+                                                    java.util.Collection<AfterSaleTicketStatus> statuses) {
         LambdaQueryWrapper<AfterSaleTicket> wrapper = new LambdaQueryWrapper<AfterSaleTicket>()
                 .eq(AfterSaleTicket::getUserId, userId);
         if (statuses != null && !statuses.isEmpty()) {
@@ -49,14 +48,7 @@ public class AfterSaleTicketRepositoryImpl implements AfterSaleTicketRepository 
             wrapper.in(AfterSaleTicket::getStatus,
                     AfterSaleTicketStatus.DRAFT, AfterSaleTicketStatus.SUBMITTED, AfterSaleTicketStatus.APPROVED);
         }
-        // 日期重叠：existing.dep <= toDate AND existing.ret >= fromDate
-        if (fromDate != null && !fromDate.isBlank()) {
-            wrapper.ge(AfterSaleTicket::getReturnDate, fromDate);
-        }
-        if (toDate != null && !toDate.isBlank()) {
-            wrapper.le(AfterSaleTicket::getDepartureDate, toDate);
-        }
-        wrapper.orderByAsc(AfterSaleTicket::getDepartureDate);
+        wrapper.orderByDesc(AfterSaleTicket::getCreatedAt);
         return ticketMapper.selectList(wrapper);
     }
 

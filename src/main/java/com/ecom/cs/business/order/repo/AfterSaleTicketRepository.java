@@ -17,13 +17,10 @@ public interface AfterSaleTicketRepository {
     List<AfterSaleTicket> findByUserIdAndStatus(String userId, AfterSaleTicketStatus status);
 
     /**
-     * 查询用户所有生效中的售后工单（DRAFT / SUBMITTED / APPROVED），
-     * 可选地与给定日期范围 [fromDate, toDate] 有重叠。
-     * <p>重叠判定：existing.departureDate <= toDate AND existing.returnDate >= fromDate。
-     * <p>任何一端传 null 则不参与该端的比较。
+     * 查询用户指定状态集合下的售后工单，按创建时间倒序。
+     * <p>statuses 为空时默认查询生效中的状态（DRAFT / SUBMITTED / APPROVED）。
      */
-    List<AfterSaleTicket> findActiveByUserIdAndDateRange(String userId, Collection<AfterSaleTicketStatus> statuses,
-                                                    String fromDate, String toDate);
+    List<AfterSaleTicket> findActiveByUserId(String userId, Collection<AfterSaleTicketStatus> statuses);
 
     Optional<AfterSaleTicket> findByOrderId(String orderId);
 

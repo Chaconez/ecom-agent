@@ -15,20 +15,19 @@ CREATE TABLE IF NOT EXISTS agentscope_session (
 CREATE TABLE IF NOT EXISTS `after_sale_ticket` (
     `order_id`       VARCHAR(64)  NOT NULL COMMENT '售后工单ID',
     `user_id`        VARCHAR(64)  NOT NULL COMMENT '申请人ID',
-    `destination`    VARCHAR(256) DEFAULT NULL COMMENT '目的地',
-    `departure_city` VARCHAR(128) DEFAULT NULL COMMENT '出发城市',
-    `departure_date` VARCHAR(32)  DEFAULT NULL COMMENT '出发日期',
-    `return_date`    VARCHAR(32)  DEFAULT NULL COMMENT '返回日期',
-    `purpose`        VARCHAR(512) DEFAULT NULL COMMENT '售后事由',
+    `product_name`   VARCHAR(256) DEFAULT NULL COMMENT '申请售后的商品/服务名称（含规格与数量）',
+    `issue_desc`     VARCHAR(512) DEFAULT NULL COMMENT '问题描述与期望处理方式',
+    `purchase_date`  VARCHAR(32)  DEFAULT NULL COMMENT '购买日期 yyyy-MM-dd',
     `status`         VARCHAR(32)  NOT NULL DEFAULT 'DRAFT' COMMENT '状态: DRAFT/SUBMITTED/APPROVED/REJECTED/COMPLETED/CANCELLED',
     `approval_id`    VARCHAR(64)  DEFAULT NULL COMMENT '关联审批单ID',
-    `plan_html_url`  VARCHAR(512) DEFAULT NULL COMMENT '行程方案HTML的MinIO对象key',
+    `plan_html_url`  VARCHAR(512) DEFAULT NULL COMMENT '工单详情HTML的MinIO对象key',
     `created_at`     DATETIME     DEFAULT NULL COMMENT '创建时间',
     `updated_at`     DATETIME     DEFAULT NULL COMMENT '最后修改时间',
     PRIMARY KEY (`order_id`),
     KEY `idx_user_id` (`user_id`),
-    KEY `idx_user_status` (`user_id`, `status`)
-) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '售后工单单';
+    KEY `idx_user_status` (`user_id`, `status`),
+    KEY `idx_user_product` (`user_id`, `product_name`)
+) ENGINE = InnoDB DEFAULT CHARSET = utf8mb4 COMMENT = '售后工单';
 
 
 CREATE TABLE IF NOT EXISTS `approval_record` (
@@ -231,18 +230,18 @@ VALUES
 
 -- 4. 售后工单示例（覆盖 DRAFT / SUBMITTED / APPROVED 三种典型状态）
 INSERT IGNORE INTO `after_sale_ticket`
-    (`order_id`, `user_id`, `destination`, `departure_city`, `departure_date`, `return_date`, `purpose`, `status`, `approval_id`, `created_at`, `updated_at`)
+    (`order_id`, `user_id`, `product_name`, `issue_desc`, `purchase_date`, `status`, `approval_id`, `created_at`, `updated_at`)
 VALUES
-    ('to_20260701_001', 'u001', '主动降噪无线蓝牙耳机 Pro', NULL, '2026-07-10', NULL, '右耳偶发断连，申请换货', 'APPROVED',  'ap_20260701_001', '2026-07-01 10:00:00', '2026-07-02 09:00:00'),
-    ('to_20260710_002', 'u001', '轻薄笔记本电脑 14 英寸',   NULL, '2026-07-20', NULL, '屏幕出现亮点，申请换机', 'SUBMITTED', 'ap_20260710_002', '2026-07-10 14:30:00', '2026-07-10 14:30:00'),
-    ('to_20260715_003', 'u002', '智能手表 GT 运动版',       NULL, '2026-08-01', NULL, '表带卡扣断裂，申请维修', 'DRAFT',     NULL,              '2026-07-15 09:00:00', '2026-07-15 09:00:00');
+    ('to_20260701_001', 'u001', '主动降噪无线蓝牙耳机 Pro 黑色 1件', '右耳偶发断连，申请换货', '2026-07-05', 'APPROVED',  'ap_20260701_001', '2026-07-01 10:00:00', '2026-07-02 09:00:00'),
+    ('to_20260710_002', 'u001', '轻薄笔记本电脑 14 英寸 银色 1台',   '屏幕出现亮点，申请换机', '2026-07-15', 'SUBMITTED', 'ap_20260710_002', '2026-07-10 14:30:00', '2026-07-10 14:30:00'),
+    ('to_20260715_003', 'u002', '智能手表 GT 运动版 46mm 1只',       '表带卡扣断裂，申请维修', '2026-07-28', 'DRAFT',     NULL,              '2026-07-15 09:00:00', '2026-07-15 09:00:00');
 
 -- 5. 审批记录示例（关联上面的售后工单）
 INSERT IGNORE INTO `approval_record`
     (`process_instance_id`, `user_id`, `title`, `status`, `approval_form`, `remark`, `submit_time`, `update_time`, `order_id`)
 VALUES
-    ('ap_20260701_001', 'u001', '张三-耳机换货申请-2026/07/01', 'APPROVED', '{"product":"主动降噪无线蓝牙耳机 Pro","type":"换货"}', '符合七天无理由，同意', '2026-07-01 10:05:00', '2026-07-02 09:00:00', 'to_20260701_001'),
-    ('ap_20260710_002', 'u001', '张三-笔记本换机申请-2026/07/10', 'PENDING',  '{"product":"轻薄笔记本电脑 14 英寸","type":"换货"}', NULL,             '2026-07-10 14:35:00', '2026-07-10 14:35:00', 'to_20260710_002');
+    ('ap_20260701_001', 'u001', '主动降噪无线蓝牙耳机 Pro 售后申请', 'APPROVED', '{"orderId":"to_20260701_001","userId":"u001","productName":"主动降噪无线蓝牙耳机 Pro 黑色 1件","issueDesc":"右耳偶发断连，申请换货","purchaseDate":"2026-07-05"}', '符合七天无理由，同意', '2026-07-01 10:05:00', '2026-07-02 09:00:00', 'to_20260701_001'),
+    ('ap_20260710_002', 'u001', '轻薄笔记本电脑 14 英寸 售后申请',   'PENDING',  '{"orderId":"to_20260710_002","userId":"u001","productName":"轻薄笔记本电脑 14 英寸 银色 1台","issueDesc":"屏幕出现亮点，申请换机","purchaseDate":"2026-07-15"}', NULL,             '2026-07-10 14:35:00', '2026-07-10 14:35:00', 'to_20260710_002');
 
 -- 6. 电商订单示例（外部渠道已支付订单）
 INSERT IGNORE INTO `ecommerce_order`
@@ -320,28 +319,26 @@ CREATE TABLE IF NOT EXISTS `user_preference` (
 INSERT IGNORE INTO `user_profile` (`user_id`, `base_city`, `level`, `chinese_name`, `phone`) VALUES
 ('u_test', '上海', 'NORMAL', '测试账号', '13800000007');
 
--- 2. 服务工单主表（after_sale_ticket：工单语义化后的字段映射）
---    destination=问题对象（商品）  departure_city=联系城市
---    departure_date=申请日期  return_date=期望处理截止  purpose=问题描述
+-- 2. 售后工单主表（after_sale_ticket）
 INSERT IGNORE INTO `after_sale_ticket`
-    (`order_id`, `user_id`, `destination`, `departure_city`, `departure_date`, `return_date`, `purpose`, `status`, `approval_id`, `created_at`, `updated_at`)
+    (`order_id`, `user_id`, `product_name`, `issue_desc`, `purchase_date`, `status`, `approval_id`, `created_at`, `updated_at`)
 VALUES
-    ('to_20261018_701', 'u_test', '主动降噪无线蓝牙耳机 Pro', '上海', '2026-10-18', '2026-10-25', '右耳偶发断连，申请换货', 'SUBMITTED', 'ap_20261018_701', '2026-10-18 10:00:00', '2026-10-18 10:05:00'),
-    ('to_20261012_702', 'u_test', '激光导航扫地机器人', '上海', '2026-10-12', '2026-10-20', '清扫路径规划异常，申请维修', 'APPROVED', 'ap_20261012_702', '2026-10-12 14:30:00', '2026-10-12 14:35:00'),
-    ('to_20261005_703', 'u_test', 'SPF50+ 清爽防晒霜', '上海', '2026-10-05', '2026-10-08', '商品破损，申请退款', 'CANCELLED', 'ap_20261005_703', '2026-10-05 09:15:00', '2026-10-05 09:20:00');
+    ('to_20261018_701', 'u_test', '主动降噪无线蓝牙耳机 Pro 黑色 1件', '右耳偶发断连，申请换货',     '2026-10-16', 'SUBMITTED', 'ap_20261018_701', '2026-10-18 10:00:00', '2026-10-18 10:05:00'),
+    ('to_20261012_702', 'u_test', '激光导航扫地机器人 标准版 1台',     '清扫路径规划异常，申请维修', '2026-10-08', 'APPROVED',  'ap_20261012_702', '2026-10-12 14:30:00', '2026-10-12 14:35:00'),
+    ('to_20261005_703', 'u_test', 'SPF50+ 清爽防晒霜 50ml 2支',        '商品破损，申请退款',         '2026-10-02', 'CANCELLED', 'ap_20261005_703', '2026-10-05 09:15:00', '2026-10-05 09:20:00');
 
--- 3. 工单处理记录（approval_record）
+-- 3. 工单审批记录（approval_record）
 INSERT IGNORE INTO `approval_record`
     (`process_instance_id`, `user_id`, `title`, `status`, `approval_form`, `remark`, `submit_time`, `update_time`, `order_id`)
 VALUES
-    ('ap_20261018_701', 'u_test', '测试账号-耳机换货-2026/10/18', 'PENDING',
-     '{"type":"after_sale","product":"主动降噪无线蓝牙耳机 Pro","orderNo":"EC20261018001","issue":"右耳偶发断连","expect":"换货"}',
+    ('ap_20261018_701', 'u_test', '主动降噪无线蓝牙耳机 Pro 售后申请', 'PENDING',
+     '{"orderId":"to_20261018_701","userId":"u_test","productName":"主动降噪无线蓝牙耳机 Pro 黑色 1件","issueDesc":"右耳偶发断连，申请换货","purchaseDate":"2026-10-16"}',
      NULL, '2026-10-18 10:05:00', '2026-10-18 10:05:00', 'to_20261018_701'),
-    ('ap_20261012_702', 'u_test', '测试账号-扫地机维修-2026/10/12', 'APPROVED',
-     '{"type":"repair","product":"激光导航扫地机器人","orderNo":"EC20261012005","issue":"清扫路径规划异常","expect":"维修"}',
+    ('ap_20261012_702', 'u_test', '激光导航扫地机器人 售后申请', 'APPROVED',
+     '{"orderId":"to_20261012_702","userId":"u_test","productName":"激光导航扫地机器人 标准版 1台","issueDesc":"清扫路径规划异常，申请维修","purchaseDate":"2026-10-08"}',
      '已安排上门取件检测', '2026-10-12 14:35:00', '2026-10-13 09:00:00', 'to_20261012_702'),
-    ('ap_20261005_703', 'u_test', '测试账号-防晒霜退款-2026/10/05', 'REJECTED',
-     '{"type":"refund","product":"SPF50+ 清爽防晒霜","orderNo":"EC20261005004","issue":"商品破损","expect":"退款"}',
+    ('ap_20261005_703', 'u_test', 'SPF50+ 清爽防晒霜 售后申请', 'REJECTED',
+     '{"orderId":"to_20261005_703","userId":"u_test","productName":"SPF50+ 清爽防晒霜 50ml 2支","issueDesc":"商品破损，申请退款","purchaseDate":"2026-10-02"}',
      '已超出售后期，建议联系快递理赔', '2026-10-05 09:20:00', '2026-10-06 11:00:00', 'to_20261005_703');
 
 -- 4. 商品订单（ecommerce_order，biz_type=GOODS）
@@ -397,3 +394,15 @@ CREATE TABLE IF NOT EXISTS `admin_audit_log` (
 -- ALTER TABLE `chat_conversation`
 --     ADD COLUMN `mode` VARCHAR(16) NOT NULL DEFAULT 'AI'
 --     COMMENT '会话模式：AI 智能助手 / HUMAN 人工接管' AFTER `title`;
+
+-- ============================================================
+-- 存量库迁移（2026-10-22）：after_sale_ticket 差旅字段 → 售后语义字段
+-- 新库已含在 CREATE TABLE 中；老库执行下面语句（不可重复执行）
+-- ============================================================
+-- ALTER TABLE `after_sale_ticket`
+--     CHANGE COLUMN `destination`    `product_name`  VARCHAR(256) DEFAULT NULL COMMENT '申请售后的商品/服务名称（含规格与数量）',
+--     CHANGE COLUMN `purpose`        `issue_desc`    VARCHAR(512) DEFAULT NULL COMMENT '问题描述与期望处理方式',
+--     CHANGE COLUMN `departure_date` `purchase_date` VARCHAR(32)  DEFAULT NULL COMMENT '购买日期 yyyy-MM-dd',
+--     DROP COLUMN `departure_city`,
+--     DROP COLUMN `return_date`;
+-- ALTER TABLE `after_sale_ticket` ADD KEY `idx_user_product` (`user_id`, `product_name`);

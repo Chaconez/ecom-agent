@@ -2,7 +2,7 @@ package com.ecom.cs.agent;
 
 import com.ecom.cs.agent.common.PromptLoader;
 import com.ecom.cs.agent.memory.AgentMemoryFactory;
-import com.ecom.cs.agent.tools.AfterSaleTicketConflictTools;
+import com.ecom.cs.agent.tools.AfterSaleTicketDuplicateTools;
 import com.ecom.cs.agent.tools.AfterSaleTicketWriteTools;
 import io.agentscope.core.ReActAgent;
 import io.agentscope.core.hook.PendingToolRecoveryHook;
@@ -28,13 +28,13 @@ public class TicketManageAgent extends BaseSubAgent {
     protected AfterSaleTicketWriteTools ticketWriteTools;
 
     /**
-     * 行程冲突检测工具（check_after_sale_ticket_conflicts）。
+     * 重复工单检测工具（check_duplicate_after_sale_ticket）。
      */
     @Autowired
-    protected AfterSaleTicketConflictTools ticketConflictTools;
+    protected AfterSaleTicketDuplicateTools ticketDuplicateTools;
 
     /**
-     * 行程管理 Agent 最大推理迭代次数
+     * 工单管理 Agent 最大推理迭代次数
      */
     private static final int MAX_ITERATIONS = 10;
 
@@ -49,8 +49,8 @@ public class TicketManageAgent extends BaseSubAgent {
         toolkit.registration().tool(ticketReadTools).apply();
         // query_ecommerce_order（查询外部预订记录：商品/服务等）
         toolkit.registration().tool(orderReadTools).apply();
-        // check_after_sale_ticket_conflicts（行程冲突检测：时间重叠 + 跨城衍接）
-        toolkit.registration().tool(ticketConflictTools).apply();
+        // check_duplicate_after_sale_ticket（重复工单检测：同商品同问题 / 同商品其他问题）
+        toolkit.registration().tool(ticketDuplicateTools).apply();
         // 用户信息查询与维护
         toolkit.registration().tool(userInfoReadTools).apply();
         toolkit.registration().tool(userInfoWriteTools).apply();
