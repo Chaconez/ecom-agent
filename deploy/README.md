@@ -10,7 +10,10 @@
 | llmentor-ecom-backend | eclipse-temurin:21-jre | **8094** | host 网络，挂载 jar(ro) + /app/logs(rw) |
 | llmentor-ecom-frontend | nginx:alpine | **8095** | 挂载 frontend dist 与 nginx.conf，含 /logs/ 反代 |
 
-前端构建时注入 `VITE_API_BASE=http://192.168.3.3:8094`，浏览器直连后端（后端已开 @CrossOrigin）。
+前端构建默认**同源**（`VITE_API_BASE` 未设置即取 `window.location.origin`），
+由前端 nginx 把 `/api/` 反代到 `host.docker.internal:8094`，因此局域网/多设备访问都不会
+把 `localhost` 烘进产物。构建用 `npm run build`（或显式 `npm run build:deploy`）即可，
+无需再传后端地址。
 
 访问入口：http://192.168.3.3:8095
 后端 API：http://192.168.3.3:8094
@@ -50,6 +53,44 @@ TZ=Asia/Shanghai
 > **为什么 host 网络 + 127.0.0.1**：bridge 网络下容器访问宿主机 LAN IP 会被 fnOS 防火墙
 > hairpin 阻断；host 网络下本机访问自身 LAN IP 也被 REJECT，同机服务一律 127.0.0.1。
 > Ollama 在另一台机器（192.168.3.15），走 LAN IP 可达，不受此限。
+
+## 模型接入（Ollama / DeepSeek）
+
+四个模型 Bean（`fastModel` / `stableModel` / `strongModel` / `strongModelWithThinking`）
+由 `ecom.model.provider` 决定走哪家，实现见 `agent/config/ModelConfig.java`。
+
+| 提供方 | 适用场景 | 依赖 |
+|---|---|---|
+| `ollama`（默认） | 全离线、数据不出内网 | 可达的 Ollama 实例 |
+| `deepseek` | 云端推理，OpenAI 兼容协议 | `DEEPSEEK_API_KEY` |
+
+切换到 DeepSeek（无需改代码）：
+
+```bash
+-e ECOM_MODEL_PROVIDER=deepseek \
+-e DEEPSEEK_API_KEY=sk-xxxx \
+-e DEEPSEEK_BASE_URL=https://api.deepseek.com \
+```
+
+默认模型分工（均可用环境变量覆盖）：
+
+| Bean | 职责 | DeepSeek 默认 | Ollama 默认 |
+|---|---|---|---|
+| fastModel | 会话标题、偏好抽取 | `deepseek-flash`（thinking 关） | `qwen2.5:7b` |
+| stableModel | 意图 L3、查询改写、信息查询、记忆摘要 | `deepseek-flash`（thinking 关） | `qwen2.5:7b` |
+| strongModel | Master / 工单 / 订单 / 商品导购主链路 | `deepseek-flash`（thinking 关，支持 tool calls） | `qwen3.8:27b-mlx` |
+| strongModelWithThinking | 需深度推理的场景 | `deepseek-v4-pro`（thinking 开，effort=high） | 同上 + thinking |
+
+注意点：
+
+- **embedding 不走 DeepSeek**：意图 L2 向量与政策知识库用 bge-m3，仍由 Ollama 提供，
+  因此切到云端后 Ollama 仍需可用（`OLLAMA_BASE_URL`）。
+- 模型名以现行 API 为准：`deepseek-chat` / `deepseek-reasoner` 已于 2026-07-24 退役，
+  现行是 `deepseek-flash` 与 `deepseek-v4-pro`。
+- DeepSeek V4 默认开启 thinking，轻任务会被拖慢，所以 `DeepSeekThinkingFormatter`
+  会按 Bean 用途显式注入 `thinking: {type: disabled}`。
+- 启动校验：`provider=deepseek` 但没给 key 时应用直接启动失败并提示配置 `DEEPSEEK_API_KEY`，
+  不会等到第一次对话才报错。
 
 ## 创建容器（SSH 直连，等价 compose）
 
