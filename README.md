@@ -3,7 +3,7 @@
 > 基于 Spring Boot 3 + AgentScope + Ollama 的 C 端电商智能客服演示项目：
 > 商品咨询、下单购买、订单/物流查询、售后退换货、服务工单的全流程多 Agent 协作。
 >
-> 作者：章文杰 · 技术演示项目（面试作品集）
+> 作者：章文杰 · 技术演示项目
 
 [![Java](https://img.shields.io/badge/Java-21-orange)](https://openjdk.org/)
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.6-brightgreen)](https://spring.io/projects/spring-boot)
