@@ -55,21 +55,31 @@ public class ModelConfig {
     @Value("${ollama.base-url:${OLLAMA_BASE_URL:http://127.0.0.1:11434}}")
     private String ollamaBaseUrl;
 
-    @Value("${ollama.fast-model:${OLLAMA_FAST_MODEL:qwen2.5:7b}}")
+    @Value("${ollama.fast-model:${OLLAMA_FAST_MODEL:qwen3.8:27b-mlx}}")
     private String ollamaFastModel;
 
-    @Value("${ollama.stable-model:${OLLAMA_STABLE_MODEL:qwen2.5:7b}}")
+    @Value("${ollama.stable-model:${OLLAMA_STABLE_MODEL:qwen3.8:27b-mlx}}")
     private String ollamaStableModel;
 
     @Value("${ollama.strong-model:${OLLAMA_STRONG_MODEL:qwen3.8:27b-mlx}}")
     private String ollamaStrongModel;
 
     /**
-     * strong 模型的上下文窗口。Ollama 默认 num_ctx 只有 4K，
-     * 多工具长链路（系统提示 + 知识检索 + 工具往返）容易爆，默认 16K；显存紧张可降到 8K。
+     * <b>四个 Bean 共用的上下文窗口</b>。Ollama 默认只给 4K（0.40 对大内存机器会放宽，
+     * 实测行为不确定），这里统一显式指定。
+     *
+     * <p>⚠️ <b>必须四个 Bean 用同一个值</b>：它们默认都是同一个 27B 模型，
+     * num_ctx 不同会让 Ollama 把同一份权重加载成两个实例，来回切换就是反复冷加载。</p>
      */
-    @Value("${ollama.strong-num-ctx:${OLLAMA_STRONG_NUM_CTX:16384}}")
-    private Integer ollamaStrongNumCtx;
+    @Value("${ollama.num-ctx:${OLLAMA_NUM_CTX:${OLLAMA_STRONG_NUM_CTX:16384}}}")
+    private Integer ollamaNumCtx;
+
+    /**
+     * 模型常驻时长，四个 Bean 必须一致 —— 轻任务若用默认 5m，会把实例的存活时间刷短，
+     * 主链路下次请求又要重载。
+     */
+    @Value("${ollama.keep-alive:${OLLAMA_KEEP_ALIVE:30m}}")
+    private String ollamaKeepAlive;
 
     // ── DeepSeek ──────────────────────────────────────────────────────────────
 
@@ -119,6 +129,7 @@ public class ModelConfig {
 
     /**
      * 轻任务模型：会话标题、偏好抽取。
+     * <p>与主链路同模型同参数（见 {@link #lightOptions()}），保证落到同一个 Ollama 实例。</p>
      */
     @Bean("fastModel")
     public Model fastModel() {
@@ -128,6 +139,7 @@ public class ModelConfig {
         return OllamaChatModel.builder()
                 .baseUrl(ollamaBaseUrl)
                 .modelName(ollamaFastModel)
+                .defaultOptions(lightOptions())
                 .build();
     }
 
@@ -146,8 +158,8 @@ public class ModelConfig {
                 .baseUrl(ollamaBaseUrl)
                 .modelName(ollamaStrongModel)
                 .defaultOptions(OllamaOptions.builder()
-                        .numCtx(ollamaStrongNumCtx)
-                        .keepAlive("30m")
+                        .numCtx(ollamaNumCtx)
+                        .keepAlive(ollamaKeepAlive)
                         .thinkOption(ThinkOption.ThinkBoolean.DISABLED)
                         .build())
                 .build();
@@ -165,8 +177,8 @@ public class ModelConfig {
                 .baseUrl(ollamaBaseUrl)
                 .modelName(ollamaStrongModel)
                 .defaultOptions(OllamaOptions.builder()
-                        .numCtx(ollamaStrongNumCtx)
-                        .keepAlive("30m")
+                        .numCtx(ollamaNumCtx)
+                        .keepAlive(ollamaKeepAlive)
                         .thinkOption(ThinkOption.ThinkBoolean.ENABLED)
                         .build())
                 .build();
@@ -175,6 +187,7 @@ public class ModelConfig {
     /**
      * 稳定任务模型：意图 L3 / 查询改写 / InfoAgent / 记忆摘要等确定性任务，
      * 要求 JSON 输出稳定，不需要 thinking。
+     * <p>与 fastModel 共用 {@link #lightOptions()}，保证落到同一个 Ollama 实例。</p>
      */
     @Bean("stableModel")
     public Model stableModel() {
@@ -184,6 +197,20 @@ public class ModelConfig {
         return OllamaChatModel.builder()
                 .baseUrl(ollamaBaseUrl)
                 .modelName(ollamaStableModel)
+                .defaultOptions(lightOptions())
+                .build();
+    }
+
+    /**
+     * 轻任务 Bean 的公共 options：关闭 thinking + 与主链路一致的 numCtx / keepAlive。
+     * 抽出来是为了让 fastModel 和 stableModel 不可能写出两套参数 ——
+     * num_ctx 不同会让 Ollama 把同一份权重加载成两个实例。
+     */
+    private OllamaOptions lightOptions() {
+        return OllamaOptions.builder()
+                .numCtx(ollamaNumCtx)
+                .keepAlive(ollamaKeepAlive)
+                .thinkOption(ThinkOption.ThinkBoolean.DISABLED)
                 .build();
     }
 

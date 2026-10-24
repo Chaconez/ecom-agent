@@ -119,8 +119,11 @@ app:
     # 非空则只向 LLM 暴露白名单内的工具，减少 Token 消耗。
     # 默认：仅暴露免费版可用的两个工具，避免调用付费工具时反复报错
     enabled-tools: ${ORIZN_MCP_ENABLED_TOOLS:quick_visa_check,check_visa_requirement}
-    # MCP 初始化握手超时
-    initialization-timeout-seconds: 20
+    # MCP 初始化握手超时。
+    # ⚠️ 容器/无 Node 环境下 `npx -y orizn-visa-mcp` 会立即启动失败，但原值 20s 会让每次
+    # 对话白等 20 秒才降级（实测 06:28:00.8 启动失败 → 06:28:20.8 才超时）。
+    # 默认缩到 5s；若宿主机有 Node 且首次要下载 npm 包，可用 env 调回 30。
+    initialization-timeout-seconds: ${ORIZN_MCP_INIT_TIMEOUT:5}
     # 工具调用请求超时
     request-timeout-seconds: 30
 
@@ -147,14 +150,17 @@ app:
     # 状态 TTL（秒），仅用于清理长期未触发的脏数据。
     state-ttl-seconds: 86400
 
-# 本地模型（Ollama）：fastModel（会话标题/偏好抽取）与 embedding（意图路由 + 政策知识库，bge-m3）
-# strong/stable 模型仍走 DashScope；换机器用环境变量 OLLAMA_BASE_URL / OLLAMA_FAST_MODEL / OLLAMA_EMBEDDING_MODEL 覆盖
+# 本地模型（Ollama）：四个对话 Bean 统一 qwen3.8:27b-mlx，embedding 走 bge-m3。
+# 换机器用环境变量覆盖：OLLAMA_BASE_URL / OLLAMA_FAST_MODEL / OLLAMA_STABLE_MODEL /
+#   OLLAMA_STRONG_MODEL / OLLAMA_NUM_CTX / OLLAMA_KEEP_ALIVE / OLLAMA_EMBEDDING_MODEL
 ollama:
   base-url: ${OLLAMA_BASE_URL:http://127.0.0.1:11434}
-  fast-model: ${OLLAMA_FAST_MODEL:qwen2.5:7b}
-  stable-model: ${OLLAMA_STABLE_MODEL:qwen2.5:7b}
+  fast-model: ${OLLAMA_FAST_MODEL:qwen3.8:27b-mlx}
+  stable-model: ${OLLAMA_STABLE_MODEL:qwen3.8:27b-mlx}
   strong-model: ${OLLAMA_STRONG_MODEL:qwen3.8:27b-mlx}
-  strong-num-ctx: ${OLLAMA_STRONG_NUM_CTX:16384}
+  # ⚠️ num-ctx / keep-alive 是四个 Bean 共用的，必须一致，否则同一模型会被加载成两个实例
+  num-ctx: ${OLLAMA_NUM_CTX:16384}
+  keep-alive: ${OLLAMA_KEEP_ALIVE:30m}
   embedding-model: ${OLLAMA_EMBEDDING_MODEL:bge-m3}
 
 agentscope:

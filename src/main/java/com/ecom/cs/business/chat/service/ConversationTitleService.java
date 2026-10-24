@@ -36,7 +36,11 @@ public class ConversationTitleService {
     private static final Logger logger = LoggerFactory.getLogger(ConversationTitleService.class);
 
     private static final int MAX_TITLE_LENGTH = 24;
-    private static final Duration TIMEOUT = Duration.ofSeconds(5);
+    /**
+     * 标题生成超时。原值 5s 是按 7B 小模型（加载约 1~2s）定的；
+     * 统一到 27B 后冷加载约 9s，5s 必然超时，放宽到 20s 覆盖"冷加载 + 生成"的最坏情况。
+     */
+    private static final Duration TIMEOUT = Duration.ofSeconds(20);
 
     @Autowired
     @Qualifier("fastModel")
