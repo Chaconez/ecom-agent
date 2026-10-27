@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import reactor.core.publisher.Mono;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -78,9 +79,21 @@ public class ChatAgentExecutor {
 
     /**
      * 创建新的 SseEmitter 实例（统一超时配置）。
+     *
+     * <p>创建后立即下发一个注释帧（{@code :connected}），强制 Tomcat 提交响应头。
+     * 否则响应头要等第一个业务事件才提交，反代（Lucky 默认 10s 等首字节）会在
+     * Agent 冷启动 / MCP 初始化 / 模型冷加载期间判定上游无响应并返回 502。
+     * 注释帧以冒号开头，SSE 规范要求客户端忽略，不影响前端解析。</p>
      */
     public SseEmitter createEmitter() {
-        return new SseEmitter(SSE_EMITTER_TIMEOUT_MILLIS);
+        SseEmitter emitter = new SseEmitter(SSE_EMITTER_TIMEOUT_MILLIS);
+        try {
+            emitter.send(SseEmitter.event().comment("connected"));
+        } catch (IOException | IllegalStateException e) {
+            // 建连即失败（客户端已断开）属正常竞态，不影响后续流程
+            logger.debug("[EXECUTOR] SSE 建连注释帧发送失败: {}", e.getMessage());
+        }
+        return emitter;
     }
 
     /**
