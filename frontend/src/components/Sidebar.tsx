@@ -170,26 +170,28 @@ export default function Sidebar() {
         </div>
       </div>
 
-      {/* New chat button */}
-      <div className="sidebar-new">
-        <button
-          className="new-chat-btn"
-          onClick={() => {
-            setView('chat');
-            createConversation();
-          }}
-        >
-          <svg viewBox="0 0 16 16" fill="none" width="15" height="15">
-            <path
-              d="M8 2v12M2 8h12"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-          </svg>
-          新建对话
-        </button>
-      </div>
+      {/* New chat button（管理端不支持新建对话） */}
+      {!isAdmin && (
+        <div className="sidebar-new">
+          <button
+            className="new-chat-btn"
+            onClick={() => {
+              setView('chat');
+              createConversation();
+            }}
+          >
+            <svg viewBox="0 0 16 16" fill="none" width="15" height="15">
+              <path
+                d="M8 2v12M2 8h12"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+            新建对话
+          </button>
+        </div>
+      )}
 
       {/* Admin navigation */}
       <div className="sidebar-nav">
@@ -205,18 +207,23 @@ export default function Sidebar() {
         >
           {isAdmin ? '📦 所有订单' : '📦 我的订单'}
         </button>
-        <button
-          className={`sidebar-nav-btn${view === 'recommend' ? ' active' : ''}`}
-          onClick={() => setView('recommend')}
-        >
-          ⭐ 为你推荐
-        </button>
-        <button
-          className={`sidebar-nav-btn${view === 'preference' ? ' active' : ''}`}
-          onClick={() => setView('preference')}
-        >
-          ⚙️ 偏好设置
-        </button>
+        {/* 推荐 / 偏好为 C 端功能，管理端不展示 */}
+        {!isAdmin && (
+          <>
+            <button
+              className={`sidebar-nav-btn${view === 'recommend' ? ' active' : ''}`}
+              onClick={() => setView('recommend')}
+            >
+              ⭐ 为你推荐
+            </button>
+            <button
+              className={`sidebar-nav-btn${view === 'preference' ? ' active' : ''}`}
+              onClick={() => setView('preference')}
+            >
+              ⚙️ 偏好设置
+            </button>
+          </>
+        )}
         {isAdmin && (
           <button
             className={`sidebar-nav-btn${view === 'admin' ? ' active' : ''}`}

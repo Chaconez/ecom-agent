@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent, type KeyboardEvent } from 'react';
 import { login, fetchUserInfo } from '../api/auth';
 import { useAuthStore } from '../store/authStore';
+import { useUiStore } from '../store/uiStore';
 
 export default function LoginPage() {
   const [username, setUsername] = useState('');
@@ -11,6 +12,7 @@ export default function LoginPage() {
   const setAuth = useAuthStore((s) => s.setAuth);
   const token = useAuthStore((s) => s.token);
   const clearAuth = useAuthStore((s) => s.clearAuth);
+  const setView = useUiStore((s) => s.setView);
 
   /**
    * 若本地已存在 token，先校验其有效性。
@@ -56,6 +58,10 @@ export default function LoginPage() {
       // 登录成功后查询用户信息获取 userId 与管理员标识
       const info = await fetchUserInfo(result.token);
       setAuth(result.token, info.userId, username.trim(), info.admin === true);
+      // 管理员登录后直接进入客服工作台（管理端默认页，无 C 端推荐/偏好入口）
+      if (info.admin === true) {
+        setView('admin');
+      }
     } catch (err: any) {
       setError(err.message || '登录失败，请重试');
     } finally {

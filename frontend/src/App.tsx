@@ -14,7 +14,9 @@ import './App.css';
 export default function App() {
   const { token, clearAuth, setIsAdmin } = useAuthStore();
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn());
+  const isAdmin = useAuthStore((s) => s.isAdmin);
   const view = useUiStore((s) => s.view);
+  const setView = useUiStore((s) => s.setView);
 
   /**
    * 页面刺新/首次加载时，若 localStorage 存有 token，则立即对后端进行驗证。
@@ -43,6 +45,17 @@ export default function App() {
       .finally(() => setChecking(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // 仅在组件首次挂载（页面初始化/刷新）时运行一次
+
+  /**
+   * 管理端没有「为你推荐」「偏好设置」两个 C 端页面。
+   * 若登录态从普通用户切到管理员时残留了这两个视图（同一 SPA 会话内退出再登录），
+   * 兜底切回客服工作台，避免渲染出侧边栏已隐藏的页面。
+   */
+  useEffect(() => {
+    if (isAdmin && (view === 'recommend' || view === 'preference')) {
+      setView('admin');
+    }
+  }, [isAdmin, view, setView]);
 
   // token 正在驗证中：返回空白屏避免闪现错误页面
   if (checking) return null;
