@@ -74,10 +74,7 @@ export default function LoginPage() {
         <div className="login-brand">
           <span className="login-brand-icon">🛒</span>
           <div>
-            <div className="login-brand-name">
-              电商智能客服
-              <span className="portal-badge" title="用户端：面向消费者的智能客服入口">用户端</span>
-            </div>
+            <div className="login-brand-name">电商智能客服</div>
             <div className="login-brand-sub">您的智能购物助手</div>
           </div>
         </div>
@@ -134,9 +131,9 @@ export default function LoginPage() {
         </form>
 
         <div className="login-hint">
-          <div>演示账号：<b>test</b>（用户端）/ <b>admin</b>（管理端）· 密码均为 123456</div>
+          <div>演示账号：<b>test</b>（普通用户）/ <b>admin</b>（管理员）· 密码均为 123456</div>
           <div className="login-hint-sub">
-            admin 为客服管理员账号，管理端功能请访问 8097 端口的管理端入口
+            统一入口登录，登录后按账号角色展示对应功能（管理员可见「客服工作台」）
           </div>
         </div>
       </div>

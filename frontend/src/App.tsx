@@ -4,27 +4,17 @@ import { useUiStore } from './store/uiStore';
 import { fetchUserInfo } from './api/auth';
 import Sidebar from './components/Sidebar';
 import ChatWindow from './components/ChatWindow';
-import AdminApprovalPage from './components/AdminApprovalPage';
+import AdminWorkbenchPage from './components/AdminWorkbenchPage';
 import MyOrdersPage from './components/MyOrdersPage';
 import RecommendPage from './components/RecommendPage';
 import PreferencePage from './components/PreferencePage';
 import LoginPage from './components/LoginPage';
 import './App.css';
 
-/** 管理端（客服工作台）入口地址：与用户端同主机、8097 端口（8096 被 NAS 智能家居服务占用） */
-function adminPortalUrl(): string {
-  if (typeof window === 'undefined') return 'http://localhost:8097';
-  const { protocol, hostname } = window.location;
-  return `${protocol}//${hostname}:8097`;
-}
-
 export default function App() {
-  const { token, clearAuth, setIsAdmin, isAdmin } = useAuthStore();
+  const { token, clearAuth, setIsAdmin } = useAuthStore();
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn());
   const view = useUiStore((s) => s.view);
-
-  // admin 账号登录的是管理端：用户端顶部展示可关闭的引导横幅
-  const [bannerDismissed, setBannerDismissed] = useState(false);
 
   /**
    * 页面刺新/首次加载时，若 localStorage 存有 token，则立即对后端进行驗证。
@@ -63,28 +53,10 @@ export default function App() {
 
   return (
     <div className="app-root">
-      {isAdmin && !bannerDismissed && (
-        <div className="admin-portal-banner">
-          <span className="banner-icon">🛡️</span>
-          <span>
-            当前是<b>用户端</b>（演示入口）。admin 账号对应的<b>管理端</b>（客服工作台）请前往：
-            <a href={adminPortalUrl()} target="_blank" rel="noreferrer">
-              {adminPortalUrl()}
-            </a>
-          </span>
-          <button
-            className="banner-close"
-            onClick={() => setBannerDismissed(true)}
-            title="关闭提示"
-          >
-            ✕
-          </button>
-        </div>
-      )}
       <div className="app-body">
         <Sidebar />
         {view === 'admin' ? (
-          <AdminApprovalPage />
+          <AdminWorkbenchPage />
         ) : view === 'orders' ? (
           <MyOrdersPage />
         ) : view === 'recommend' ? (

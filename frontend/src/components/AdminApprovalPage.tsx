@@ -118,7 +118,18 @@ function ApprovalCard({
   );
 }
 
-export default function AdminApprovalPage() {
+/**
+ * 客服工作台 · 工单审批面板。
+ *
+ * <p>作为「客服工作台」的一个 tab 内嵌渲染，页面标题与 tab 切换由外层
+ * AdminWorkbenchPage 提供，本组件只负责状态筛选、列表与决策。</p>
+ */
+export default function AdminApprovalPanel({
+  onPendingCount,
+}: {
+  /** 待处理工单数上报（供外层 tab 显示红点） */
+  onPendingCount?: (count: number) => void;
+}) {
   const clearAuth = useAuthStore((s) => s.clearAuth);
   const [status, setStatus] = useState<ApprovalStatusFilter>('PENDING');
   const [list, setList] = useState<AdminApproval[]>([]);
@@ -133,6 +144,8 @@ export default function AdminApprovalPage() {
       try {
         const data = await fetchApprovals(s);
         setList(data);
+        // 仅在「待处理」筛选下上报数量，避免其他筛选覆盖红点
+        if (s === 'PENDING') onPendingCount?.(data.length);
       } catch (err: any) {
         if (err?.message === 'UNAUTHORIZED') {
           clearAuth();
@@ -144,7 +157,7 @@ export default function AdminApprovalPage() {
         setLoading(false);
       }
     },
-    [clearAuth],
+    [clearAuth, onPendingCount],
   );
 
   useEffect(() => {
@@ -169,13 +182,13 @@ export default function AdminApprovalPage() {
   };
 
   return (
-    <main className="admin-page">
-      <div className="admin-header">
-        <div>
-          <h1 className="admin-title">客服工作台</h1>
-          <p className="admin-subtitle">查看并处理用户服务工单</p>
+    <div className="aw-approval">
+      <div className="aw-approval-toolbar">
+        <div className="aw-approval-title-group">
+          <span className="aw-panel-title">工单队列</span>
+          <span className="aw-panel-sub">查看并处理用户服务工单</span>
         </div>
-        <button className="admin-refresh" onClick={() => load(status)} disabled={loading}>
+        <button className="aw-refresh" onClick={() => load(status)} disabled={loading}>
           刷新
         </button>
       </div>
@@ -210,6 +223,6 @@ export default function AdminApprovalPage() {
           ))
         )}
       </div>
-    </main>
+    </div>
   );
 }

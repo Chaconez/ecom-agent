@@ -2079,62 +2079,6 @@ html, body {
   color: #8a919c;
 }
 
-/* 分端标识徽标：用户端 / 管理端 */
-.portal-badge {
-  display: inline-block;
-  margin-left: 8px;
-  padding: 1px 8px;
-  font-size: 11px;
-  font-weight: 500;
-  color: #1677ff;
-  background: #e6f4ff;
-  border: 1px solid #91caff;
-  border-radius: 10px;
-  vertical-align: middle;
-  line-height: 1.5;
-}
-
-/* 管理端引导横幅（admin 账号登录用户端时展示） */
-.admin-portal-banner {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 16px;
-  background: #fffbe6;
-  border-bottom: 1px solid #ffe58f;
-  color: #874d00;
-  font-size: 13px;
-}
-
-.admin-portal-banner .banner-icon {
-  font-size: 15px;
-}
-
-.admin-portal-banner a {
-  color: #1677ff;
-  font-weight: 500;
-  text-decoration: none;
-}
-
-.admin-portal-banner a:hover {
-  text-decoration: underline;
-}
-
-.admin-portal-banner .banner-close {
-  margin-left: auto;
-  border: none;
-  background: transparent;
-  color: #874d00;
-  cursor: pointer;
-  font-size: 14px;
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.admin-portal-banner .banner-close:hover {
-  background: #ffe58f;
-}
-
 /* 登录页底部署名：固定视口底部居中，避免被 flex 行布局挤到卡片右侧 */
 .login-footer {
   position: fixed;
@@ -2577,6 +2521,534 @@ html, body {
 .sidebar-nav-btn.active {
   background: #0d419d20;
   color: #58a6ff;
+}
+
+/* ── Admin Workbench（客服工作台：会话接管 + 工单审批） ────────────────── */
+.aw-page {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #f0f2f5;
+}
+
+.aw-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 28px 14px;
+  background: #fff;
+  border-bottom: 1px solid #e8e8e8;
+  flex-shrink: 0;
+}
+
+.aw-header-title {
+  min-width: 0;
+}
+
+.aw-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a1a;
+}
+
+.aw-subtitle {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: #8b949e;
+}
+
+.aw-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.aw-tab {
+  padding: 7px 18px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  color: #595959;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.aw-tab:hover {
+  border-color: #1677ff;
+  color: #1677ff;
+}
+
+.aw-tab.active {
+  background: #1677ff;
+  border-color: #1677ff;
+  color: #fff;
+}
+
+.aw-tab-count {
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 9px;
+  background: #ff4d4f;
+  color: #fff;
+  font-size: 11px;
+}
+
+.aw-tab.active .aw-tab-count {
+  background: #fff;
+  color: #1677ff;
+}
+
+.aw-body {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+/* 左栏：会话列表 */
+.aw-conv-panel {
+  width: 264px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: #fff;
+  border-right: 1px solid #e8e8e8;
+}
+
+.aw-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 16px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+.aw-panel-count {
+  padding: 0 7px;
+  border-radius: 9px;
+  background: #f0f2f5;
+  color: #8b949e;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.aw-panel-sub {
+  font-size: 12px;
+  color: #8b949e;
+}
+
+.aw-conv-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 8px 12px;
+}
+
+.aw-conv-item {
+  padding: 10px 12px;
+  margin-bottom: 4px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.aw-conv-item:hover {
+  background: #f5f7fa;
+}
+
+.aw-conv-item.active {
+  background: #e6f4ff;
+  border-color: #91caff;
+}
+
+.aw-conv-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.aw-conv-title {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a1a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aw-conv-item.human .aw-conv-title {
+  color: #d46b08;
+}
+
+.aw-mode-badge {
+  padding: 0 6px;
+  border-radius: 4px;
+  background: #fff7e6;
+  border: 1px solid #ffd591;
+  color: #d46b08;
+  font-size: 10px;
+  line-height: 16px;
+}
+
+.aw-conv-preview {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #8b949e;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aw-conv-meta {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #b0b6bd;
+}
+
+/* 右侧：会话详情 */
+.aw-chat {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.aw-chat-empty {
+  align-items: center;
+  justify-content: center;
+}
+
+.aw-chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 20px;
+  background: #fff;
+  border-bottom: 1px solid #e8e8e8;
+  flex-shrink: 0;
+}
+
+.aw-chat-header-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.aw-chat-title {
+  max-width: 280px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.aw-chat-user {
+  font-size: 12px;
+  color: #8b949e;
+}
+
+.aw-chat-mode {
+  font-size: 12px;
+  color: #52c41a;
+  white-space: nowrap;
+}
+
+.aw-chat-mode.human {
+  color: #fa8c16;
+}
+
+.aw-btn {
+  padding: 6px 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.aw-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.aw-btn-takeover {
+  background: #1677ff;
+  color: #fff;
+}
+
+.aw-btn-takeover:hover:not(:disabled) {
+  background: #0958d9;
+}
+
+.aw-btn-release {
+  background: #fff;
+  border-color: #fa8c16;
+  color: #fa8c16;
+}
+
+.aw-btn-release:hover:not(:disabled) {
+  background: #fff7e6;
+}
+
+.aw-btn-ghost {
+  background: #fff;
+  border-color: #d9d9d9;
+  color: #595959;
+}
+
+.aw-btn-send {
+  height: 38px;
+  padding: 0 20px;
+  background: #1677ff;
+  color: #fff;
+}
+
+.aw-btn-send:hover:not(:disabled) {
+  background: #0958d9;
+}
+
+.aw-msg-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 20px;
+  background: #f7f8fa;
+}
+
+.aw-msg-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 78%;
+}
+
+.aw-msg-row.user {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.aw-msg-row.system {
+  align-self: center;
+  align-items: center;
+  max-width: 90%;
+}
+
+.aw-msg-sender {
+  font-size: 11px;
+  color: #8b949e;
+}
+
+.aw-msg-bubble {
+  padding: 10px 14px;
+  border: 1px solid #ececec;
+  border-radius: 12px;
+  background: #fff;
+  font-size: 13px;
+  line-height: 1.65;
+  color: #1f2328;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.aw-msg-row.user .aw-msg-bubble {
+  background: #1677ff;
+  border-color: #1677ff;
+  color: #fff;
+}
+
+.aw-msg-row.system .aw-msg-bubble {
+  background: #f0f2f5;
+  border-color: #e8e8e8;
+  color: #8b949e;
+  font-size: 12px;
+  text-align: center;
+}
+
+.aw-msg-bubble.human {
+  background: #fff7e6;
+  border-color: #ffd591;
+}
+
+.aw-msg-row.user .aw-msg-bubble.human {
+  background: #fff7e6;
+  border-color: #ffd591;
+  color: #1f2328;
+}
+
+.aw-msg-time {
+  font-size: 11px;
+  color: #b0b6bd;
+}
+
+.aw-input-area {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 12px 20px;
+  background: #fff;
+  border-top: 1px solid #e8e8e8;
+  flex-shrink: 0;
+}
+
+.aw-input {
+  flex: 1;
+  resize: none;
+  padding: 9px 12px;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.6;
+  outline: none;
+}
+
+.aw-input:focus {
+  border-color: #1677ff;
+}
+
+.aw-input-hint {
+  padding: 0 20px 12px;
+  background: #fff;
+  font-size: 11px;
+  color: #8b949e;
+}
+
+.aw-handover {
+  padding: 12px 20px;
+  background: #fff7e6;
+  border-bottom: 1px solid #ffe58f;
+}
+
+.aw-handover-label {
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: #874d00;
+}
+
+.aw-handover-input {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ffd591;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  resize: vertical;
+  outline: none;
+}
+
+.aw-handover-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* 工单审批面板（嵌入 tab） */
+.aw-approval {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: 20px 28px 32px;
+}
+
+.aw-approval-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.aw-approval-title-group {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.aw-approval .aw-panel-title {
+  padding: 0;
+}
+
+.aw-refresh {
+  padding: 7px 16px;
+  background: #fff;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  color: #595959;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.aw-refresh:hover:not(:disabled) {
+  border-color: #1677ff;
+  color: #1677ff;
+}
+
+.aw-refresh:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.aw-error {
+  padding: 9px 12px;
+  border: 1px solid #ffccc7;
+  border-radius: 8px;
+  background: #fff2f0;
+  color: #cf1322;
+  font-size: 12px;
+}
+
+.aw-error-panel {
+  margin: 0 12px 8px;
+}
+
+.aw-error-main {
+  margin: 10px 20px 0;
+}
+
+.aw-empty {
+  padding: 40px 0;
+  text-align: center;
+  color: #8b949e;
+  font-size: 13px;
+}
+
+/* 窄屏：会话列表收窄，避免挤压聊天区 */
+@media (max-width: 1180px) {
+  .aw-header {
+    padding: 14px 18px 12px;
+  }
+
+  .aw-conv-panel {
+    width: 210px;
+  }
+
+  .aw-chat-title {
+    max-width: 160px;
+  }
+
+  .aw-approval {
+    padding: 16px 18px 24px;
+  }
 }
 
 /* ── Admin Approval Page ───────────────────────────────────────────────── */
