@@ -162,7 +162,12 @@ VITE_API_BASE=http://127.0.0.1:8094 npm run build
 
 访问 http://127.0.0.1:5173（dev）/ 静态 dist（build）。
 
-### 5.5 启动管理端（B 端客服工作台）
+### 5.5 管理端（客服工作台）
+
+**统一入口**：直接访问前端（8095），用 `admin` 账号登录即可。登录后侧边栏出现
+「🎧 客服工作台」，按 `role = ADMIN` 自动展示，无需另开端口或另一套前端。
+
+`admin/` 是早期独立 SPA 实现（默认 8097），保留作参考，仅在需要独立部署时启动：
 
 ```bash
 cd admin
@@ -172,17 +177,16 @@ npm run dev      # 开发，Vite 代理 /api → 127.0.0.1:8094
 npm run build
 ```
 
-管理端为独立 SPA（默认 8097，可用 `-p` 改端口），登录页仅放行 ADMIN 角色账号。
+### 5.6 演示账号与角色约定
 
-### 5.6 演示账号与分端约定
-
-| 账号 | 密码 | 端 | 说明 |
+| 账号 | 密码 | 角色 | 说明 |
 |---|---|---|---|
-| `test` | `123456` | 用户端（frontend） | 演示账号（预置 3 条工单 + 4 条订单，含在途物流） |
-| `admin` | `123456` | 管理端（admin） | 客服工作台：会话接管、人工对话、工单审批 |
+| `test` | `123456` | 普通用户 | 演示账号（预置 3 条工单 + 4 条订单，含在途物流） |
+| `admin` | `123456` | 管理员 | 登录后额外可见「客服工作台」：工单审批；独立端另有会话接管 |
 
-**admin 登录用户端也能用**（方便演示者预览 C 端体验，登录后有管理端入口横幅），
-但管理端接口（`/api/admin/**`）严格校验 `@SaCheckRole("ADMIN")`，非管理员访问返回 403。
+统一入口，按账号角色区分功能。管理端接口（`/api/admin/**`）严格校验
+`@SaCheckRole("ADMIN")`，非管理员访问返回 403；业务接口（对话、订单、偏好、推荐）
+只校验 `@SaCheckLogin`，管理员同样可当普通用户使用。
 
 登录后依次尝试：「你好」→「我想喝汽水」（看挡答人设）→「我的订单到哪了」→
 「先列出我所有的工单」→「我要退货」→「转人工」（演示人工接管全链路）。
@@ -216,14 +220,14 @@ NAS/Docker 部署（容器创建、jar 热更新、nginx 配置、灌库运维�
 ```
 NAS(host 网络)
 ├── llmentor-ecom-backend  (temurin:21-jre, 8094, 挂载 jar)
-├── llmentor-ecom-frontend (nginx:alpine,   8095, 反代 /api + /logs，C 端用户端)
-├── llmentor-ecom-admin    (nginx:alpine,   8097, 反代 /api，管理端客服工作台)
+├── llmentor-ecom-frontend (nginx:alpine,   8095, 反代 /api + /logs，统一入口)
 ├── MySQL 3306 / Redis 6379
 └── Ollama 11434（可同机或独立机器，OLLAMA_BASE_URL 指定）
 ```
 
-管理端 nginx 配置见 `deploy/admin-nginx.conf`。注意：8096 在部分 NAS 上被
-智能家居 host-network 服务占用，选端口前先 `ss -tln` 确认。
+统一入口只需上述两个容器；管理端功能随 `admin` 账号登录在同一前端内呈现。
+如需独立管理端（8097），nginx 配置见 `deploy/admin-nginx.conf`。注意：8096 在部分
+NAS 上被智能家居 host-network 服务占用，选端口前先 `ss -tln` 确认。
 
 ## 八、开发说明
 
@@ -243,8 +247,8 @@ ecom-agent/
 │   ├── dataset/          # RAG 知识库文档（历史遗留差旅内容，P4 替换）
 │   ├── intent-seed.yml   # L2 向量种子语料
 │   └── db/schema.sql     # 建表脚本
-├── frontend/             # React 19 + Vite（C 端用户端，8095）
-├── admin/                # React 19 + Vite + zustand（B 端管理端，8097）
+├── frontend/             # React 19 + Vite（统一入口，8095；admin 登录后含客服工作台）
+├── admin/                # 历史独立管理端 SPA（可选，默认 8097）
 └── deploy/               # NAS 部署配置 + 演示数据 + 乱码修复脚本
 ```
 
