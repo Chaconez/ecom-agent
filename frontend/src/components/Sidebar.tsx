@@ -203,7 +203,7 @@ export default function Sidebar() {
           className={`sidebar-nav-btn${view === 'orders' ? ' active' : ''}`}
           onClick={() => setView('orders')}
         >
-          📦 我的订单
+          {isAdmin ? '📦 所有订单' : '📦 我的订单'}
         </button>
         <button
           className={`sidebar-nav-btn${view === 'recommend' ? ' active' : ''}`}

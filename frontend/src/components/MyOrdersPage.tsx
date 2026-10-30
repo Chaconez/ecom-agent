@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   fetchMyOrders,
+  fetchAllOrders,
   deleteOrder,
   cancelOrder,
   type MyOrder,
@@ -110,15 +111,23 @@ function OrderCard({
   order,
   active,
   onClick,
+  showOwner,
 }: {
   order: MyOrder;
   active: boolean;
   onClick: () => void;
+  /** 管理端「所有订单」：卡片上标注归属用户 */
+  showOwner?: boolean;
 }) {
   return (
     <div className={`orders-card${active ? ' active' : ''}`} onClick={onClick}>
       <div className="orders-card-head">
         <span className="orders-card-route">{order.bizTypeLabel || '订单'}</span>
+        {showOwner && (
+          <span className="orders-card-owner" title={order.userId || ''}>
+            👤 {order.userName || order.userId || '未知用户'}
+          </span>
+        )}
         {order.platform && <span className="orders-card-tag">{order.platform}</span>}
       </div>
       <div className="orders-card-title">{order.title || order.externalOrderNo || order.orderNo}</div>
@@ -139,10 +148,13 @@ function OrderDetail({
   order,
   onAction,
   onRefresh,
+  readonly,
 }: {
   order: MyOrder;
   onAction: (prompt: string) => void;
   onRefresh: () => void;
+  /** 管理端「所有订单」：只读查看，不提供以当前账号发起的取消/删除/咨询动作 */
+  readonly?: boolean;
 }) {
   const prompts = useMemo(() => buildPrompts(order), [order]);
 
@@ -191,6 +203,12 @@ function OrderDetail({
             {order.platform && <span className="orders-card-tag">{order.platform}</span>}
           </div>
           <div className="orders-detail-sub">
+            {readonly && (
+              <>
+                归属用户：{order.userName || order.userId || '未知'}
+                <span className="orders-detail-sep">·</span>
+              </>
+            )}
             订单号：{order.orderNo}
             {order.externalOrderNo && (
               <>
@@ -227,41 +245,50 @@ function OrderDetail({
         </div>
       </div>
 
-      <div className="orders-actions">
-        {order.orderUrl && (
-          <a
-            className="orders-action-btn"
-            href={order.orderUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            🔗 查看平台订单
-          </a>
-        )}
-        <button className="orders-action-btn" onClick={() => onAction(prompts.logistics)}>
-          🚚 查物流
-        </button>
-        <button className="orders-action-btn" onClick={() => onAction(prompts.aftersale)}>
-          🛠 申请售后
-        </button>
-        <button className="orders-action-btn primary" onClick={() => onAction(prompts.consult)}>
-          💬 再次咨询
-        </button>
-        {canCancel(order) && (
-          <button className="orders-action-btn danger" onClick={handleCancel}>
-            ✕ 取消订单
-          </button>
-        )}
-        <button className="orders-action-btn" onClick={handleDelete}>
-          🗑 删除记录
-        </button>
-      </div>
+      {(!readonly || order.orderUrl) && (
+        <div className="orders-actions">
+          {order.orderUrl && (
+            <a
+              className="orders-action-btn"
+              href={order.orderUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              🔗 查看平台订单
+            </a>
+          )}
+          {!readonly && (
+            <>
+              <button className="orders-action-btn" onClick={() => onAction(prompts.logistics)}>
+                🚚 查物流
+              </button>
+              <button className="orders-action-btn" onClick={() => onAction(prompts.aftersale)}>
+                🛠 申请售后
+              </button>
+              <button className="orders-action-btn primary" onClick={() => onAction(prompts.consult)}>
+                💬 再次咨询
+              </button>
+              {canCancel(order) && (
+                <button className="orders-action-btn danger" onClick={handleCancel}>
+                  ✕ 取消订单
+                </button>
+              )}
+              <button className="orders-action-btn" onClick={handleDelete}>
+                🗑 删除记录
+              </button>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
 export default function MyOrdersPage() {
   const clearAuth = useAuthStore((s) => s.clearAuth);
+  const isAdmin = useAuthStore((s) => s.isAdmin);
+  /** 管理员进入即「所有订单」：展示全部用户订单并标注归属；普通用户只看自己的 */
+  const scopeAll = isAdmin;
   const setView = useUiStore((s) => s.setView);
   const setPendingUserMessage = useUiStore((s) => s.setPendingUserMessage);
   const createConversation = useChatStore((s) => s.createConversation);
@@ -276,7 +303,7 @@ export default function MyOrdersPage() {
     setLoading(true);
     setError('');
     try {
-      const data = await fetchMyOrders();
+      const data = scopeAll ? await fetchAllOrders() : await fetchMyOrders();
       setOrders(data);
       setSelectedId((prev) => {
         if (prev && data.some((o) => o.orderNo === prev)) return prev;
@@ -287,13 +314,13 @@ export default function MyOrdersPage() {
         clearAuth();
         return;
       }
-      setError('加载订单失败');
+      setError(err?.message === 'FORBIDDEN' ? '无权查看全部订单' : '加载订单失败');
       setOrders([]);
       setSelectedId(null);
     } finally {
       setLoading(false);
     }
-  }, [clearAuth]);
+  }, [clearAuth, scopeAll]);
 
   useEffect(() => {
     load();
@@ -319,8 +346,12 @@ export default function MyOrdersPage() {
     <main className="admin-page orders-page">
       <div className="admin-header">
         <div>
-          <h1 className="admin-title">我的订单</h1>
-          <p className="admin-subtitle">查看您的订单、支付与售后信息，快捷发起咨询</p>
+          <h1 className="admin-title">{scopeAll ? '所有订单' : '我的订单'}</h1>
+          <p className="admin-subtitle">
+            {scopeAll
+              ? '全部用户的订单，每条标注归属用户（只读）'
+              : '查看您的订单、支付与售后信息，快捷发起咨询'}
+          </p>
         </div>
         <button className="admin-refresh" onClick={load} disabled={loading}>
           刷新
@@ -344,7 +375,9 @@ export default function MyOrdersPage() {
       {loading ? (
         <div className="admin-empty">加载中...</div>
       ) : filtered.length === 0 ? (
-        <div className="admin-empty">您还没有订单，去对话页咨询客服吧</div>
+        <div className="admin-empty">
+          {scopeAll ? '暂无订单' : '您还没有订单，去对话页咨询客服吧'}
+        </div>
       ) : (
         <div className="orders-layout">
           <div className="orders-list">
@@ -354,12 +387,18 @@ export default function MyOrdersPage() {
                 order={o}
                 active={selectedId === o.orderNo}
                 onClick={() => setSelectedId(o.orderNo)}
+                showOwner={scopeAll}
               />
             ))}
           </div>
           <div className="orders-main">
             {selected ? (
-              <OrderDetail order={selected} onAction={handleAction} onRefresh={load} />
+              <OrderDetail
+                order={selected}
+                onAction={handleAction}
+                onRefresh={load}
+                readonly={scopeAll}
+              />
             ) : (
               <div className="admin-empty">请选择左侧的订单查看详情</div>
             )}

@@ -32,6 +32,13 @@ public class EcommerceOrderRepositoryImpl implements EcommerceOrderRepository {
     }
 
     @Override
+    public List<EcommerceOrder> findAll() {
+        return bookingRecordMapper.selectList(
+                new LambdaQueryWrapper<EcommerceOrder>()
+                        .orderByDesc(EcommerceOrder::getOrderedAt));
+    }
+
+    @Override
     public List<EcommerceOrder> findByUserIdAndBizType(String userId, OrderType bizType) {
         return bookingRecordMapper.selectList(
                 new LambdaQueryWrapper<EcommerceOrder>()

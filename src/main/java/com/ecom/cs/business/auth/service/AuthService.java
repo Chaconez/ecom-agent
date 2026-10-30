@@ -77,4 +77,25 @@ public class AuthService {
         UserAccount account = userAccountMapper.findByUserId(userId);
         return account != null ? account.getRealName() : null;
     }
+
+    /**
+     * 取用户展示名（管理端列表标注归属用）：真实姓名 → 登录账号 → userId。
+     * <p>保证每条记录都能标出归属，不因 realName 为空而缺失。</p>
+     */
+    public String getDisplayName(String userId) {
+        if (userId == null || userId.isBlank()) {
+            return null;
+        }
+        UserAccount account = userAccountMapper.findByUserId(userId);
+        if (account == null) {
+            return userId;
+        }
+        if (account.getRealName() != null && !account.getRealName().isBlank()) {
+            return account.getRealName();
+        }
+        if (account.getUsername() != null && !account.getUsername().isBlank()) {
+            return account.getUsername();
+        }
+        return userId;
+    }
 }

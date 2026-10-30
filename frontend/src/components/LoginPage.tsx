@@ -79,6 +79,8 @@ export default function LoginPage() {
           </div>
         </div>
 
+        <div className="login-project-tag">章文杰的技术演示项目</div>
+
         <h2 className="login-title">登录账号</h2>
         <p className="login-desc">登录后即可开始与 AI 助手对话</p>
 
@@ -137,7 +139,7 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-      <div className="login-footer">© 2026 章文杰 · 技术演示项目</div>
+      <div className="login-footer">© 2026 章文杰</div>
     </div>
   );
 }

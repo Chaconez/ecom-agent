@@ -178,8 +178,8 @@ agentscope:
 sa-token:
   # Token 名称，前端需在请求头中携带
   token-name: Authorization
-  # Token 有效期（2592000 = 30 天）
-  timeout: 2592000
+  # Token 有效期（1800 秒 = 30 分钟，到期需重新登录）
+  timeout: 1800
   # 动态 Token 活跃续期：每次请求重置倒计时，-1 表示不续期
   active-timeout: -1
   # 是否允许同一账号多地登录

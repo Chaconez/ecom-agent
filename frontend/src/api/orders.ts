@@ -25,6 +25,10 @@ export interface MyOrder {
   orderedAt: number | null;
   /** 第三方平台订单详情页 URL，为 null 时不展示跳转入口 */
   orderUrl: string | null;
+  /** 归属用户 ID（仅管理端「所有订单」返回） */
+  userId?: string | null;
+  /** 归属用户展示名（仅管理端「所有订单」返回，真实姓名 → 登录账号 → userId） */
+  userName?: string | null;
 }
 
 /** 拉取当前登录用户的全部订单（按下单时间倒序） */
@@ -33,6 +37,17 @@ export async function fetchMyOrders(): Promise<MyOrder[]> {
     headers: authHeaders(),
   });
   if (res.status === 401) throw new Error('UNAUTHORIZED');
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+/** 拉取全部用户的订单（仅 ADMIN，客服工作台「所有订单」，附带归属用户） */
+export async function fetchAllOrders(): Promise<MyOrder[]> {
+  const res = await fetch(`${getApiBase()}/api/admin/orders`, {
+    headers: authHeaders(),
+  });
+  if (res.status === 401) throw new Error('UNAUTHORIZED');
+  if (res.status === 403) throw new Error('FORBIDDEN');
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }

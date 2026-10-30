@@ -16,6 +16,9 @@ public interface EcommerceOrderRepository {
     /** 查询用户的所有预订记录（按下单时间倒序） */
     List<EcommerceOrder> findByUserId(String userId);
 
+    /** 查询全部订单（管理端视图，按下单时间倒序；逻辑删除的记录自动排除） */
+    List<EcommerceOrder> findAll();
+
     /** 按用户 + 业务类型查询 */
     List<EcommerceOrder> findByUserIdAndBizType(String userId, OrderType bizType);
 
